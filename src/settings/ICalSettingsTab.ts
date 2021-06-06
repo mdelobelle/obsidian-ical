@@ -39,5 +39,29 @@ export default class ICalSettingsTab extends PluginSettingTab{
 					await this.plugin.saveSettings();
 				})
 			});
+		/* iCal template file */
+		new Setting(containerEl)
+			.setName('Event Date format')
+			.setDesc('Format to display the date of the event')
+			.addText((text) => {text
+				.setPlaceholder('ddd DD/MM')
+				.setValue(this.plugin.settings.dateFormat)
+				.onChange(async (value) => {
+					this.plugin.settings.dateFormat = value
+					await this.plugin.saveSettings();
+				})
+			});
+			/* iCal template file */
+		new Setting(containerEl)
+			.setName('Event Date format')
+			.setDesc('Format to display the time of the event')
+			.addText((text) => {text
+				.setPlaceholder('HH:mm')
+				.setValue(this.plugin.settings.timeFormat)
+				.onChange(async (value) => {
+					this.plugin.settings.timeFormat = value
+					await this.plugin.saveSettings();
+				})
+			});
     }
 }

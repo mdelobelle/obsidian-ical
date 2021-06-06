@@ -8,7 +8,7 @@ export interface ICalSettings {
 }
 
 export const DEFAULT_SETTINGS: ICalSettings = {
-	icsFolder: '/',
+	icsFolder: '',
 	iCalTemplatePath: null,
 	dateFormat: "ddd DD/MM",
 	timeFormat: "HH:mm"
