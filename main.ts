@@ -1,60 +1,68 @@
-import { App, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { FileView, Plugin, View} from 'obsidian';
+import {ICalSettings, DEFAULT_SETTINGS} from "src/settings/ICalSettings"
+import ICalSettingsTab from "src/settings/ICalSettingsTab"
+import { getDateFromFile } from "obsidian-daily-notes-interface";
+import ICalEvent from "src/ICalEvent/ICalEvent"
 
-interface MyPluginSettings {
-	mySetting: string;
+function isFileView(view: View): view is FileView {
+    return (view as FileView).file !== undefined
 }
 
-const DEFAULT_SETTINGS: MyPluginSettings = {
-	mySetting: 'default'
-}
+export default class ICal extends Plugin {
+	settings: ICalSettings;
 
-export default class MyPlugin extends Plugin {
-	settings: MyPluginSettings;
+	getTemplate(): Promise<string>{
+		return new Promise((resolve, reject) => {
+			const templatePath = this.settings.iCalTemplatePath
+			if(templatePath){
+				try {
+					const template = this.app.vault.getFiles().filter(_file => _file.path == templatePath)[0]
+					this.app.vault.cachedRead(template).then(result => resolve(result))
+				} catch (error) {
+					reject(error)
+				}
+			} else {
+				resolve(null)
+			}
+		})
+	}
 
 	async onload() {
-		console.log('loading plugin');
-
+		console.log('loading ical plugin');
 		await this.loadSettings();
-
-		this.addRibbonIcon('dice', 'Sample Plugin', () => {
-			new Notice('This is a notice!');
-		});
-
-		this.addStatusBarItem().setText('Status Bar Text');
-
+		this.addSettingTab(new ICalSettingsTab(this.app, this))
 		this.addCommand({
-			id: 'open-sample-modal',
-			name: 'Open Sample Modal',
-			// callback: () => {
-			// 	console.log('Simple Callback');
-			// },
-			checkCallback: (checking: boolean) => {
-				let leaf = this.app.workspace.activeLeaf;
-				if (leaf) {
-					if (!checking) {
-						new SampleModal(this.app).open();
-					}
-					return true;
+			id: "import_events",
+			name: "import events",
+			hotkeys: [
+				{
+					modifiers: ["Alt"],
+					key: 'T',
+				},
+			],
+			callback: () => {
+				const activeView = this.app.workspace.activeLeaf.view
+				if(activeView.getViewType() == "markdown" && isFileView(activeView)){  
+					
+					const fileDate = getDateFromFile(activeView.file, "day").format("YYYYMMDD")
+					const results = this.getTemplate().then(template => Promise.all(
+						this.app.vault.getFiles()
+						.filter(file => file.parent.path == this.settings.icsFolder)
+						.map((file) =>ICalEvent.extractCalInfo(file, fileDate, template, this))))
+					results.then(data => data.filter(event => event != null)).then(icals => {
+						this.getTemplate().then(() => {
+							this.app.vault.read(activeView.file).then(content => {
+								this.app.vault.modify(activeView.file, content + '\n' + icals.sort(ICalEvent.compareEvents).map(ical => ical.event).join('\n'))
+							})
+						})
+					})
 				}
-				return false;
-			}
-		});
-
-		this.addSettingTab(new SampleSettingTab(this.app, this));
-
-		this.registerCodeMirror((cm: CodeMirror.Editor) => {
-			console.log('codemirror', cm);
-		});
-
-		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-			console.log('click', evt);
-		});
-
-		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
+			},
+		})
 	}
 
 	onunload() {
-		console.log('unloading plugin');
+		console.log('unloading ical plugin');
 	}
 
 	async loadSettings() {
@@ -63,50 +71,5 @@ export default class MyPlugin extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
-	}
-}
-
-class SampleModal extends Modal {
-	constructor(app: App) {
-		super(app);
-	}
-
-	onOpen() {
-		let {contentEl} = this;
-		contentEl.setText('Woah!');
-	}
-
-	onClose() {
-		let {contentEl} = this;
-		contentEl.empty();
-	}
-}
-
-class SampleSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
-
-	constructor(app: App, plugin: MyPlugin) {
-		super(app, plugin);
-		this.plugin = plugin;
-	}
-
-	display(): void {
-		let {containerEl} = this;
-
-		containerEl.empty();
-
-		containerEl.createEl('h2', {text: 'Settings for my awesome plugin.'});
-
-		new Setting(containerEl)
-			.setName('Setting #1')
-			.setDesc('It\'s a secret')
-			.addText(text => text
-				.setPlaceholder('Enter your secret')
-				.setValue('')
-				.onChange(async (value) => {
-					console.log('Secret: ' + value);
-					this.plugin.settings.mySetting = value;
-					await this.plugin.saveSettings();
-				}));
 	}
 }
