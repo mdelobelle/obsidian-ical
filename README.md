@@ -61,6 +61,9 @@ from a daily note type Alt+T (this hotkey is customizable) or access to the comm
 
 the following events will be added at the bottom of the file:
 - events with start date <= daily note's date <= end date
+- you can select which events to include in your daily note
+
+You can select the section wher to include the selected events
 
 ### create your template
 
