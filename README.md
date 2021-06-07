@@ -1,6 +1,6 @@
 ## ICal Plugin
 
-ICal adds the event of your calendar on MacOS to your daily note on demand
+ICal adds the event of your calendar (ics files) to your daily note on demand
 
 You can
 - Define the folder where your calendar events are stored
