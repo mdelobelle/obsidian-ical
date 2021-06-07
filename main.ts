@@ -52,8 +52,8 @@ export default class ICal extends Plugin {
 					results.then(data => data.filter(event => event != null)).then(icals => {
 						this.getTemplate().then(() => {
 							this.app.vault.read(activeView.file).then(content => {
-								const eventsContent = icals.sort(ICalEvent.compareEvents).map(ical => ical.event).join('\n')
-								const modal = new chooseSectionModal(this, activeView.file, eventsContent)
+								const events = icals.sort(ICalEvent.compareEvents)
+								const modal = new chooseSectionModal(this, activeView.file, events, fileDate)
 								modal.open()
 							})
 						})
