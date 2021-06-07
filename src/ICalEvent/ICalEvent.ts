@@ -64,18 +64,26 @@ export default class ICalEvent {
                             event.end = end
                             if(template){
                                 let attendees: string[] = []
+                                template = template.replace("{{startday}}", start.format(plugin.settings.dateFormat))
+                                template = template.replace("{{starttime}}", start.format(plugin.settings.timeFormat))
+                                template = template.replace("{{endday}}", end.format(plugin.settings.dateFormat))
+                                template = template.replace("{{endtime}}", end.format(plugin.settings.timeFormat))
                                 template = template.replace("{{start}}", ICalEvent.eventStart(start, startDay, fileDate, plugin))
                                 template = template.replace("{{end}}", ICalEvent.eventEnd(end, endDay, fileDate, plugin))
                                 template = template.replace("{{summary}}", `${ical.summary}`)
                                 template = template.replace("{{organizer}}", `${ical.organizer ? ical.organizer["params"]["CN"] : ""}`)
                                 if(Object.keys(ical).includes("attendee")){
                                     const _attendees: Array<Record<string, string>> = Object.entries(ical).filter(item => item[0] == "attendee")[0][1]
-                                    _attendees.forEach(attendee => {
-                                        const _params = Object.entries(attendee).filter(item => item[0] == "params")
-                                        const params = _params.length > 0 ? _params[0][1] : null
-                                        const _cn = params ? Object.entries(params).filter(item => item[0] == "CN") : null
-                                        if(_cn && `${_cn[0][1]}` != `${ical.organizer["params"]["CN"]}`){attendees.push(`${_cn[0][1]}`)}
-                                    })
+                                    if(_attendees instanceof Array){
+										_attendees.forEach(attendee => {
+										const _params = Object.entries(attendee).filter(item => item[0] == "params")
+											const params = _params.length > 0 ? _params[0][1] : null
+											const _cn = params ? Object.entries(params).filter(item => item[0] == "CN") : null
+											if(_cn && `${_cn[0][1]}` != `${ical.organizer["params"]["CN"]}`){attendees.push(`${_cn[0][1]}`)}
+										})
+									} else {
+										attendees.push(_attendees["params"]["CN"])
+									}
                                 }
                                 template = template.replace("{{attendees.inline}}", attendees.join(", "))
                                 template = template.replace("{{attendees.list}}", attendees.map(attendee => `- ${attendee}`).join('\n'))

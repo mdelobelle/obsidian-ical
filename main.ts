@@ -3,6 +3,7 @@ import {ICalSettings, DEFAULT_SETTINGS} from "src/settings/ICalSettings"
 import ICalSettingsTab from "src/settings/ICalSettingsTab"
 import { getDateFromFile } from "obsidian-daily-notes-interface";
 import ICalEvent from "src/ICalEvent/ICalEvent"
+import chooseSectionModal from "src/ICalEvent/chooseSectionModal"
 
 function isFileView(view: View): view is FileView {
     return (view as FileView).file !== undefined
@@ -43,7 +44,6 @@ export default class ICal extends Plugin {
 			callback: () => {
 				const activeView = this.app.workspace.activeLeaf.view
 				if(activeView.getViewType() == "markdown" && isFileView(activeView)){  
-					
 					const fileDate = getDateFromFile(activeView.file, "day").format("YYYYMMDD")
 					const results = this.getTemplate().then(template => Promise.all(
 						this.app.vault.getFiles()
@@ -52,7 +52,9 @@ export default class ICal extends Plugin {
 					results.then(data => data.filter(event => event != null)).then(icals => {
 						this.getTemplate().then(() => {
 							this.app.vault.read(activeView.file).then(content => {
-								this.app.vault.modify(activeView.file, content + '\n' + icals.sort(ICalEvent.compareEvents).map(ical => ical.event).join('\n'))
+								const eventsContent = icals.sort(ICalEvent.compareEvents).map(ical => ical.event).join('\n')
+								const modal = new chooseSectionModal(this, activeView.file, eventsContent)
+								modal.open()
 							})
 						})
 					})
