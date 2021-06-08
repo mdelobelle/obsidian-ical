@@ -1,31 +1,26 @@
-import { FileView, Plugin, View} from 'obsidian';
+import { FileView, Plugin, TFile, View, MarkdownView} from 'obsidian';
 import {ICalSettings, DEFAULT_SETTINGS} from "src/settings/ICalSettings"
 import ICalSettingsTab from "src/settings/ICalSettingsTab"
 import { getDateFromFile } from "obsidian-daily-notes-interface";
 import ICalEvent from "src/ICalEvent/ICalEvent"
 import chooseSectionModal from "src/ICalEvent/chooseSectionModal"
 
-function isFileView(view: View): view is FileView {
-    return (view as FileView).file !== undefined
-}
-
 export default class ICal extends Plugin {
 	settings: ICalSettings;
 
-	getTemplate(): Promise<string>{
-		return new Promise((resolve, reject) => {
-			const templatePath = this.settings.iCalTemplatePath
-			if(templatePath){
-				try {
-					const template = this.app.vault.getFiles().filter(_file => _file.path == templatePath)[0]
-					this.app.vault.cachedRead(template).then(result => resolve(result))
-				} catch (error) {
-					reject(error)
+	async getTemplate(){
+		const templatePath = this.settings.iCalTemplatePath
+		if(templatePath){
+			try {
+				const templateFile = this.app.vault.getAbstractFileByPath(templatePath)
+				if(templateFile instanceof TFile){
+					const template = await this.app.vault.cachedRead(templateFile)
+					return template
 				}
-			} else {
-				resolve(null)
+			} catch (error) {
+				return error
 			}
-		})
+		}
 	}
 
 	async onload() {
@@ -42,21 +37,17 @@ export default class ICal extends Plugin {
 				},
 			],
 			callback: () => {
-				const activeView = this.app.workspace.activeLeaf.view
-				if(activeView.getViewType() == "markdown" && isFileView(activeView)){  
+				const activeView = this.app.workspace.getActiveViewOfType(MarkdownView)
+				if(activeView && activeView instanceof FileView){  
 					const fileDate = getDateFromFile(activeView.file, "day").format("YYYYMMDD")
 					const results = this.getTemplate().then(template => Promise.all(
 						this.app.vault.getFiles()
 						.filter(file => file.parent.path == this.settings.icsFolder)
 						.map((file) =>ICalEvent.extractCalInfo(file, fileDate, template, this))))
 					results.then(data => data.filter(event => event != null)).then(icals => {
-						this.getTemplate().then(() => {
-							this.app.vault.read(activeView.file).then(content => {
-								const events = icals.sort(ICalEvent.compareEvents)
-								const modal = new chooseSectionModal(this, activeView.file, events, fileDate)
-								modal.open()
-							})
-						})
+						const events = icals.sort(ICalEvent.compareEvents)
+						const modal = new chooseSectionModal(this, activeView.file, events, fileDate)
+						modal.open()
 					})
 				}
 			},

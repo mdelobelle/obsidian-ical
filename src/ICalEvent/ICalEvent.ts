@@ -1,6 +1,6 @@
 import {moment, TFile, FileSystemAdapter} from "obsidian"
 import ICal from "main"
-import {parseFile, CalendarComponent} from "node-ical"
+import {parseFile, CalendarComponent} from "ical"
 
 export default class ICalEvent {
 	start: moment.Moment
@@ -32,7 +32,7 @@ export default class ICalEvent {
 			template = template.replace("{{start}}", this.eventStart(startDay, fileDate, plugin))
 			template = template.replace("{{end}}", this.eventEnd(endDay, fileDate, plugin))
 			template = template.replace("{{summary}}", `${this.ical.summary}`)
-			template = template.replace("{{organizer}}", `${this.ical.organizer ? this.ical.organizer["params"]["CN"] : ""}`)
+			template = template.replace("{{organizer}}", `${this.ical.organizer ? (<any>this.ical.organizer)['params']['CN'] : ""}`)
 			if(Object.keys(this.ical).includes("attendee")){
 				const _attendees: Array<Record<string, string>> = Object.entries(this.ical).filter(item => item[0] == "attendee")[0][1]
 				if(_attendees instanceof Array){
@@ -40,7 +40,7 @@ export default class ICalEvent {
 					const _params = Object.entries(attendee).filter(item => item[0] == "params")
 						const params = _params.length > 0 ? _params[0][1] : null
 						const _cn = params ? Object.entries(params).filter(item => item[0] == "CN") : null
-						if(_cn && `${_cn[0][1]}` != `${this.ical.organizer["params"]["CN"]}`){attendees.push(`${_cn[0][1]}`)}
+						if(_cn && `${_cn[0][1]}` != `${(<any>this.ical.organizer)["params"]["CN"]}`){attendees.push(`${_cn[0][1]}`)}
 					})
 				} else {
 					attendees.push(_attendees["params"]["CN"])
@@ -108,7 +108,7 @@ export default class ICalEvent {
                         iCalEvent.renderEvent(plugin, startDay, endDay, fileDate, template)
 						resolve(iCalEvent)
                     }
-                      else {
+                    else {
                         resolve(null)
                     }
 				}
