@@ -3,7 +3,7 @@ import {ICalSettings, DEFAULT_SETTINGS} from "src/settings/ICalSettings"
 import ICalSettingsTab from "src/settings/ICalSettingsTab"
 import { getDateFromFile } from "obsidian-daily-notes-interface";
 import ICalEvent from "src/ICalEvent/ICalEvent"
-import ChooseSectionModal from "src/ICalEvent/chooseSectionModal"
+import ChooseSectionModal from "src/ICalEvent/ChooseSectionModal"
 
 export default class ICal extends Plugin {
 	settings: ICalSettings;
@@ -46,7 +46,7 @@ export default class ICal extends Plugin {
 						.map((file) =>ICalEvent.extractCalInfo(file, fileDate, template, this))))
 					results.then(data => data.filter(event => event != null)).then(icals => {
 						const events = icals.sort(ICalEvent.compareEvents)
-						const modal = new chooseSectionModal(this, activeView.file, events, fileDate)
+						const modal = new ChooseSectionModal(this, activeView.file, events, fileDate)
 						modal.open()
 					})
 				}
