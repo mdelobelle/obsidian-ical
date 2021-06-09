@@ -82,38 +82,37 @@ export default class ICalEvent {
 		}
 	}
 
-    static extractCalInfo(file: TFile, fileDate: string, template: string, plugin: ICal): Promise<ICalEvent>{
-		return new Promise(resolve => {
-			plugin.app.vault.cachedRead(file).then(result => {
-				let startDay = ""
-				let endDay = ""
-				result.split("\n").forEach(line => {
-					if(line.startsWith('DTSTART')){
-						const regex = line.match(/(\d{8})T(\d{4})|VALUE=DATE:(\d{8})/)
-						if(regex && regex.length > 0){
-							startDay=`${regex[1] ? regex[1] : regex[3]}`
-						}
-					} else if(line.startsWith('DTEND')){
-						const regex = line.match(/(\d{8})T(\d{4})|VALUE=DATE:(\d{8})/)
-						if(regex && regex.length > 0){
-							endDay=`${regex[1] ? regex[1] : regex[3]}`
-						}
-					} 
-				}) 
-				if(startDay <= fileDate && fileDate <= endDay) {
-                    if (plugin.app.vault.adapter instanceof FileSystemAdapter) {
-                        let basePath = plugin.app.vault.adapter.getBasePath();
-						const iCalEvent = new ICalEvent(`${basePath}/${plugin.settings.icsFolder}/${file.name}`)
-						iCalEvent.renderShortEvent(startDay, endDay,fileDate, plugin)
-                        iCalEvent.renderEvent(plugin, startDay, endDay, fileDate, template)
-						resolve(iCalEvent)
-                    }
-                    else {
-                        resolve(null)
-                    }
+    static async extractCalInfo(file: TFile, fileDate: string, template: string, plugin: ICal): Promise<ICalEvent | null>{
+		const iCalEvent = await plugin.app.vault.cachedRead(file).then(result => {
+			let startDay = ""
+			let endDay = ""
+			result.split("\n").forEach(line => {
+				if(line.startsWith('DTSTART')){
+					const regex = line.match(/(\d{8})T(\d{4})|VALUE=DATE:(\d{8})/)
+					if(regex && regex.length > 0){
+						startDay=`${regex[1] ? regex[1] : regex[3]}`
+					}
+				} else if(line.startsWith('DTEND')){
+					const regex = line.match(/(\d{8})T(\d{4})|VALUE=DATE:(\d{8})/)
+					if(regex && regex.length > 0){
+						endDay=`${regex[1] ? regex[1] : regex[3]}`
+					}
+				} 
+			}) 
+			if(startDay <= fileDate && fileDate <= endDay) {
+				if (plugin.app.vault.adapter instanceof FileSystemAdapter) {
+					let basePath = plugin.app.vault.adapter.getBasePath();
+					const _iCalEvent = new ICalEvent(`${basePath}/${plugin.settings.icsFolder}/${file.name}`)
+					_iCalEvent.renderShortEvent(startDay, endDay,fileDate, plugin)
+					_iCalEvent.renderEvent(plugin, startDay, endDay, fileDate, template)
+					return(_iCalEvent)
 				}
-				resolve(null)
-			})
+				else {
+					return(null)
+				}
+			}
+			return(null)
 		})
+		return iCalEvent
 	}
 }

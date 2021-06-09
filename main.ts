@@ -8,7 +8,7 @@ import ChooseSectionModal from "src/ICalEvent/ChooseSectionModal"
 export default class ICal extends Plugin {
 	settings: ICalSettings;
 
-	async getTemplate(){
+	async getTemplate(): Promise<string | null>{
 		const templatePath = this.settings.iCalTemplatePath
 		if(templatePath){
 			try {
@@ -18,7 +18,7 @@ export default class ICal extends Plugin {
 					return template
 				}
 			} catch (error) {
-				return error
+				return null
 			}
 		}
 	}
@@ -36,21 +36,23 @@ export default class ICal extends Plugin {
 					key: 'T',
 				},
 			],
-			callback: () => {
+			callback: async () => {
 				const activeView = this.app.workspace.getActiveViewOfType(MarkdownView)
-				if(activeView && activeView instanceof FileView){  
+				if(activeView){  
 					const fileDate = getDateFromFile(activeView.file, "day").format("YYYYMMDD")
-					const results = this.getTemplate().then(template => Promise.all(
-						this.app.vault.getFiles()
-						.filter(file => file.parent.path == this.settings.icsFolder)
-						.map((file) =>ICalEvent.extractCalInfo(file, fileDate, template, this))))
-					results.then(data => data.filter(event => event != null)).then(icals => {
-						const events = icals.sort(ICalEvent.compareEvents)
-						const modal = new ChooseSectionModal(this, activeView.file, events, fileDate)
-						modal.open()
-					})
+					const files = this.app.vault.getFiles()
+					.filter(file => file.parent.path == this.settings.icsFolder)
+					let results = []
+					const template = await this.getTemplate()
+					for(let file of files){
+						const event = await ICalEvent.extractCalInfo(file, fileDate, template, this)
+						if(event){results.push(event)}
+					}
+					const events = results.sort(ICalEvent.compareEvents)
+					const modal = new ChooseSectionModal(this, activeView.file, events, fileDate)
+					modal.open()
 				}
-			},
+			}
 		})
 	}
 
