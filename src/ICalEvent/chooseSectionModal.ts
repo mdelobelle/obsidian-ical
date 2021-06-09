@@ -2,7 +2,7 @@ import {Modal, DropdownComponent, ToggleComponent, TFile, ButtonComponent} from 
 import ICal from "main"
 import ICalEvent from "src/ICalEvent/ICalEvent"
 
-export default class chooseSectionModal extends Modal {
+export default class ChooseSectionModal extends Modal {
 
     plugin: ICal
     file: TFile

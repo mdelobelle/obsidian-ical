@@ -3,7 +3,7 @@ import {ICalSettings, DEFAULT_SETTINGS} from "src/settings/ICalSettings"
 import ICalSettingsTab from "src/settings/ICalSettingsTab"
 import { getDateFromFile } from "obsidian-daily-notes-interface";
 import ICalEvent from "src/ICalEvent/ICalEvent"
-import chooseSectionModal from "src/ICalEvent/chooseSectionModal"
+import ChooseSectionModal from "src/ICalEvent/chooseSectionModal"
 
 export default class ICal extends Plugin {
 	settings: ICalSettings;
