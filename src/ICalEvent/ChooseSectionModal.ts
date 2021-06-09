@@ -1,4 +1,4 @@
-import {Modal, DropdownComponent, ToggleComponent, TFile, ButtonComponent} from "obsidian"
+import { Modal, DropdownComponent, ToggleComponent, TFile, ButtonComponent } from "obsidian"
 import ICal from "main"
 import ICalEvent from "src/ICalEvent/ICalEvent"
 
@@ -11,7 +11,7 @@ export default class ChooseSectionModal extends Modal {
     lineNumber: number = -1
     fileDate: string
 
-    constructor(plugin: ICal, file:TFile, events: ICalEvent[], fileDate: string){
+    constructor(plugin: ICal, file: TFile, events: ICalEvent[], fileDate: string) {
         super(plugin.app)
         this.file = file
         this.plugin = plugin
@@ -20,7 +20,7 @@ export default class ChooseSectionModal extends Modal {
         this.fileDate = fileDate
     }
 
-    buildValueToggler(valueGrid: HTMLDivElement,event: ICalEvent){
+    buildValueToggler(valueGrid: HTMLDivElement, event: ICalEvent) {
         const valueSelectorContainer = valueGrid.createDiv({
             cls: "frontmatter-value-selector-container"
         })
@@ -29,15 +29,15 @@ export default class ChooseSectionModal extends Modal {
         })
         const valueToggler = new ToggleComponent(valueTogglerContainer)
         this.events.forEach(event => {
-            if (this.selectedEvents.includes(event)){
+            if (this.selectedEvents.includes(event)) {
                 valueToggler.setValue(true)
             }
         })
         valueToggler.onChange(value => {
-            if(value && !this.selectedEvents.includes(event)){
+            if (value && !this.selectedEvents.includes(event)) {
                 this.selectedEvents.push(event)
             }
-            if(!value){
+            if (!value) {
                 this.selectedEvents.remove(event)
             }
         })
@@ -47,7 +47,7 @@ export default class ChooseSectionModal extends Modal {
         valueLabel.setText(`${event.shortEvent}`)
     }
 
-    onOpen(){
+    onOpen() {
         this.titleEl.setText("Select events to include")
         const eventSelectContainer = this.contentEl.createDiv({
             cls: "frontmatter-values-grid"
@@ -56,8 +56,8 @@ export default class ChooseSectionModal extends Modal {
 
         const sectionSelectContainer = this.contentEl.createDiv()
         const selectEl = new DropdownComponent(sectionSelectContainer)
-        selectEl.addOption("","Insert selected events after...")
-        selectEl.addOption("top_-1","-- Insert at the top --")
+        selectEl.addOption("", "Insert selected events after...")
+        selectEl.addOption("top_-1", "-- Insert at the top --")
         const footer = this.contentEl.createDiv({
             cls: "frontmatter-value-grid-footer"
         })
@@ -74,14 +74,14 @@ export default class ChooseSectionModal extends Modal {
                 this.lineNumber = Number(valueArray[2])
             })
             saveButton.onClick(() => {
-                
-                if(this.lineNumber == -1){
+
+                if (this.lineNumber == -1) {
                     this.app.vault.modify(this.file, this.selectedEvents.map(event => event.event).join('\n') + '\n' + result)
                 } else {
                     let newContent: string[] = []
                     result.split('\n').forEach((_line, _lineNumber) => {
                         newContent.push(_line)
-                        if(_lineNumber == this.lineNumber){newContent.push(this.selectedEvents.map(event => event.event).join('\n'))}
+                        if (_lineNumber == this.lineNumber) { newContent.push(this.selectedEvents.map(event => event.event).join('\n')) }
                     })
                     this.app.vault.modify(this.file, newContent.join('\n'))
                 }

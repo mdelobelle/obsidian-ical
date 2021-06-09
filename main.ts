@@ -1,5 +1,5 @@
-import { FileView, Plugin, TFile, View, MarkdownView} from 'obsidian';
-import {ICalSettings, DEFAULT_SETTINGS} from "src/settings/ICalSettings"
+import { FileView, Plugin, TFile, View, MarkdownView } from 'obsidian';
+import { ICalSettings, DEFAULT_SETTINGS } from "src/settings/ICalSettings"
 import ICalSettingsTab from "src/settings/ICalSettingsTab"
 import { getDateFromFile } from "obsidian-daily-notes-interface";
 import ICalEvent from "src/ICalEvent/ICalEvent"
@@ -8,12 +8,12 @@ import ChooseSectionModal from "src/ICalEvent/ChooseSectionModal"
 export default class ICal extends Plugin {
 	settings: ICalSettings;
 
-	async getTemplate(): Promise<string | null>{
+	async getTemplate(): Promise<string | null> {
 		const templatePath = this.settings.iCalTemplatePath
-		if(templatePath){
+		if (templatePath) {
 			try {
 				const templateFile = this.app.vault.getAbstractFileByPath(templatePath)
-				if(templateFile instanceof TFile){
+				if (templateFile instanceof TFile) {
 					const template = await this.app.vault.cachedRead(templateFile)
 					return template
 				}
@@ -38,15 +38,15 @@ export default class ICal extends Plugin {
 			],
 			callback: async () => {
 				const activeView = this.app.workspace.getActiveViewOfType(MarkdownView)
-				if(activeView){  
+				if (activeView) {
 					const fileDate = getDateFromFile(activeView.file, "day").format("YYYYMMDD")
 					const files = this.app.vault.getFiles()
-					.filter(file => file.parent.path == this.settings.icsFolder)
+						.filter(file => file.parent.path == this.settings.icsFolder)
 					let results = []
 					const template = await this.getTemplate()
-					for(let file of files){
+					for (let file of files) {
 						const event = await ICalEvent.extractCalInfo(file, fileDate, template, this)
-						if(event){results.push(event)}
+						if (event) { results.push(event) }
 					}
 					const events = results.sort(ICalEvent.compareEvents)
 					const modal = new ChooseSectionModal(this, activeView.file, events, fileDate)
@@ -55,6 +55,8 @@ export default class ICal extends Plugin {
 			}
 		})
 	}
+
+	a: string = ""
 
 	onunload() {
 		console.log('unloading ical plugin');
