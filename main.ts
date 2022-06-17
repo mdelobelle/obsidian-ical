@@ -1,9 +1,9 @@
 import { FileView, Plugin, TFile, View, MarkdownView } from 'obsidian';
 import { ICalSettings, DEFAULT_SETTINGS } from "./src/settings/ICalSettings"
 import ICalSettingsTab from "./src/settings/ICalSettingsTab"
-import { getDateFromFile } from "obsidian-daily-notes-interface";
 import ICalEvent from "./src/ICalEvent/ICalEvent"
 import ChooseSectionModal from "./src/ICalEvent/ChooseSectionModal"
+import moment from 'moment'
 
 export default class ICal extends Plugin {
 	settings: ICalSettings;
@@ -39,7 +39,7 @@ export default class ICal extends Plugin {
 			callback: async () => {
 				const activeView = this.app.workspace.getActiveViewOfType(MarkdownView)
 				if (activeView) {
-					const fileDate = getDateFromFile(activeView.file, "day").format("YYYYMMDD")
+					const fileDate = moment(activeView.file.basename, "YYYY-MM-DD ddd").format("YYYYMMDD")
 					const fs = require('fs');
 					const calFolder = this.settings.icsFolder
 					const files = fs.readdirSync(calFolder)
