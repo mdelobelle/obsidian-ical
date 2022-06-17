@@ -1,5 +1,5 @@
 import { App, PluginSettingTab, Setting, TextAreaComponent, TextComponent } from "obsidian"
-import ICal from "main"
+import ICal from "../../main"
 
 export default class ICalSettingsTab extends PluginSettingTab {
 	plugin: ICal

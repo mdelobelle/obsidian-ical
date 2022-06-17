@@ -1,9 +1,9 @@
 import { FileView, Plugin, TFile, View, MarkdownView } from 'obsidian';
-import { ICalSettings, DEFAULT_SETTINGS } from "src/settings/ICalSettings"
-import ICalSettingsTab from "src/settings/ICalSettingsTab"
+import { ICalSettings, DEFAULT_SETTINGS } from "./src/settings/ICalSettings"
+import ICalSettingsTab from "./src/settings/ICalSettingsTab"
 import { getDateFromFile } from "obsidian-daily-notes-interface";
-import ICalEvent from "src/ICalEvent/ICalEvent"
-import ChooseSectionModal from "src/ICalEvent/ChooseSectionModal"
+import ICalEvent from "./src/ICalEvent/ICalEvent"
+import ChooseSectionModal from "./src/ICalEvent/ChooseSectionModal"
 
 export default class ICal extends Plugin {
 	settings: ICalSettings;
@@ -40,12 +40,14 @@ export default class ICal extends Plugin {
 				const activeView = this.app.workspace.getActiveViewOfType(MarkdownView)
 				if (activeView) {
 					const fileDate = getDateFromFile(activeView.file, "day").format("YYYYMMDD")
-					const files = this.app.vault.getFiles()
-						.filter(file => file.parent.path == this.settings.icsFolder)
+					const fs = require('fs');
+					const calFolder = this.settings.icsFolder
+					const files = fs.readdirSync(calFolder)
 					let results = []
 					const template = await this.getTemplate()
 					for (let file of files) {
-						const event = await ICalEvent.extractCalInfo(file, fileDate, template, this)
+						const filePath = calFolder + file
+						const event = await ICalEvent.extractCalInfo(filePath, fileDate, template, this)
 						if (event) { results.push(event) }
 					}
 					const events = results.sort(ICalEvent.compareEvents)

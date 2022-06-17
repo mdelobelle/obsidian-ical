@@ -1,6 +1,6 @@
 import { Modal, DropdownComponent, ToggleComponent, TFile, ButtonComponent } from "obsidian"
-import ICal from "main"
-import ICalEvent from "src/ICalEvent/ICalEvent"
+import ICal from "../../main"
+import ICalEvent from "./ICalEvent"
 
 export default class ChooseSectionModal extends Modal {
 
