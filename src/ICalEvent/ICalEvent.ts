@@ -82,8 +82,8 @@ export default class ICalEvent {
 		}
 	}
 
-	renderShortEvent(startDay: string, endDay: string, fileDate: string, plugin: ICal) {
-		this.shortEvent = String(`${this.eventStart(startDay, fileDate, plugin)} - ${this.eventEnd(endDay, fileDate, plugin)} : ${typeof this.ical.summary == "string" ? this.ical.summary.substring(0, 25) + '...' : ''}`)
+	renderShortEvent(startDay: string, endDay: string, fileDate: string, plugin: ICal, length: number) {
+		this.shortEvent = String(`${this.eventStart(startDay, fileDate, plugin)} - ${this.eventEnd(endDay, fileDate, plugin)} : ${typeof this.ical.summary == "string" ? this.ical.summary.substring(0, length) + '...' : ''}`)
 	}
 
 	renderEventLine(plugin: ICal, startDay: string, endDay: string, fileDate: string, template?: string): void {
@@ -174,7 +174,7 @@ export default class ICalEvent {
 		if (startDay <= fileDate && fileDate <= endDay) {
 			if (plugin.app.vault.adapter instanceof FileSystemAdapter) {
 				const iCalEvent = new ICalEvent(plugin, filePath, startDay, endDay, fileDate)
-				iCalEvent.renderShortEvent(startDay, endDay, fileDate, plugin)
+				iCalEvent.renderShortEvent(startDay, endDay, fileDate, plugin, 35)
 				iCalEvent.renderEventLine(plugin, startDay, endDay, fileDate, eventLineTemplate)
 				iCalEvent.renderEventNote(plugin, startDay, endDay, fileDate, eventNoteTemplate)
 				return (iCalEvent)

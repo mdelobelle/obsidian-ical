@@ -1,28 +1,79 @@
-.frontmatter-value-selector-container{
-    margin-bottom: 5px;
+.ical-events-grid {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
 }
 
-.frontmatter-value-selector-toggler {
+.ical-events-header{
+    display: flex;
+    font-size: x-small;
+}
+
+.ical-events-header-line{
+    margin-left: 3px;
+}
+
+.ical-events-header-note{
+    margin-left: 30px;
+}
+
+.ical-events-header-event{
+    margin-left: 37px;
+}
+
+.ical-event-selector-container{
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+}
+
+.ical-line-selector-toggler {
+    margin-right: 10px;
+}
+
+.ical-note-selector-toggler {
+    margin-right: 10px;
+}
+
+.ical-event-selector-label{
+    margin-left: 10px;
+    margin-top: -8px;
+    font-size: smaller;
+}
+
+
+.ical-section-selection-container {
+    display: flex;
+    margin-right: 10px;
+    padding-top: 3px;
+}
+
+.ical-section-selection-container select {
+    font-size: smaller;
+}
+
+.ical-bottom-selector-container{
+    display: flex;
+    margin-left: 10px;
+    margin-top: 6px;
+}
+
+.ical-bottom-selector-toggler {
     display: inline-block;
     margin-right: 10px;
     padding-top: 3px;
 }
 
-.frontmatter-value-selector-label{
-    display: inline-block;
-    vertical-align: top;
-    margin-left: 10px;
+.ical-bottom-selector-label{
+    margin-top: 2px;
+    font-size: small;
 }
 
-.frontmatter-values-grid {
-    display: grid;
-    grid-template-columns: repeat(1, 1fr);
-}
 
-.frontmatter-value-grid-footer {
+.ical-events-grid-footer {
     flex: 1 1 auto;
     text-align: right;
     display: flex;
     justify-content: flex-end;
     align-items: center;
+    margin-top: 10px;
 }
