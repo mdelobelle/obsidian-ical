@@ -1,4 +1,4 @@
-import { Plugin, TFile, MarkdownView } from 'obsidian';
+import { Plugin, TFile, MarkdownView, Notice } from 'obsidian';
 import { ICalSettings, DEFAULT_SETTINGS } from "./src/settings/ICalSettings"
 import ICalSettingsTab from "./src/settings/ICalSettingsTab"
 import ICalEvent from "./src/ICalEvent/ICalEvent"
@@ -53,21 +53,25 @@ export default class ICal extends Plugin {
 			callback: async () => {
 				const activeView = this.app.workspace.getActiveViewOfType(MarkdownView)
 				if (activeView) {
-					const fileDate = moment(activeView.file.basename, "YYYY-MM-DD ddd").format("YYYYMMDD")
+					const fileDate = moment(activeView.file.basename, this.settings.dailyNoteDateFormat).format("YYYYMMDD")
 					const fs = require('fs');
 					const calFolder = this.settings.icsFolder
-					const files = fs.readdirSync(calFolder)
-					let results = []
-					const eventLineTemplate = await this.getEventLineTemplate()
-					const eventNoteTemplate = await this.getEventNoteTemplate()
-					for (let file of files) {
-						const filePath = calFolder + file
-						const event = await ICalEvent.extractCalInfo(filePath, fileDate, eventLineTemplate, eventNoteTemplate, this)
-						if (event) { results.push(event) }
+					try {
+						const files = fs.readdirSync(calFolder)
+						let results = []
+						const eventLineTemplate = await this.getEventLineTemplate()
+						const eventNoteTemplate = await this.getEventNoteTemplate()
+						for (let file of files) {
+							const filePath = calFolder + file
+							const event = await ICalEvent.extractCalInfo(filePath, fileDate, eventLineTemplate, eventNoteTemplate, this)
+							if (event) { results.push(event) }
+						}
+						const events = results.sort(ICalEvent.compareEvents)
+						const modal = new ChooseSectionModal(this, activeView.file, events, fileDate)
+						modal.open()
+					} catch (error) {
+						new Notice('iCal settings: No such directory');
 					}
-					const events = results.sort(ICalEvent.compareEvents)
-					const modal = new ChooseSectionModal(this, activeView.file, events, fileDate)
-					modal.open()
 				}
 			}
 		})

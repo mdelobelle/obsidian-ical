@@ -27,6 +27,19 @@ export default class ICalSettingsTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					})
 			});
+		/*Daily note date format*/
+		new Setting(containerEl)
+			.setName('daily notes date format')
+			.setDesc('daily notes date format')
+			.addText((text) => {
+				text
+					.setPlaceholder('YYYY-MM-DD')
+					.setValue(this.plugin.settings.dailyNoteDateFormat)
+					.onChange(async (value) => {
+						this.plugin.settings.dailyNoteDateFormat = value
+						await this.plugin.saveSettings();
+					})
+			});
 		/* iCal event line template file */
 		new Setting(containerEl)
 			.setName('Event line template file')

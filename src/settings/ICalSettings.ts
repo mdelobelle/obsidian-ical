@@ -6,6 +6,7 @@ export interface ICalSettings {
 	timeFormat: string
 	iCalEventNotesFolder: string
 	iCalEventNotesFileNameTemplate: string
+	dailyNoteDateFormat: string
 }
 
 export const DEFAULT_SETTINGS: ICalSettings = {
@@ -15,5 +16,6 @@ export const DEFAULT_SETTINGS: ICalSettings = {
 	dateFormat: "ddd DD/MM",
 	timeFormat: "HH:mm",
 	iCalEventNotesFolder: null,
-	iCalEventNotesFileNameTemplate: null
+	iCalEventNotesFileNameTemplate: null,
+	dailyNoteDateFormat: "YYYY-MM-DD"
 }
