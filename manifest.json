@@ -1,7 +1,7 @@
 {
 	"id": "obsidian-ical",
 	"name": "iCal",
-	"version": "0.0.6",
+	"version": "0.0.7",
 	"minAppVersion": "0.15.2",
 	"description": "Include your ics calendar events in daily notes.",
 	"author": "mdelobelle",
