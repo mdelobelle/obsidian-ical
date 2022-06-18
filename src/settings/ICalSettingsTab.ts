@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting, TextAreaComponent, TextComponent } from "obsidian"
+import { App, PluginSettingTab, Setting } from "obsidian"
 import ICal from "../../main"
 
 export default class ICalSettingsTab extends PluginSettingTab {
@@ -27,20 +27,63 @@ export default class ICalSettingsTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					})
 			});
-		/* iCal template file */
+		/* iCal event line template file */
 		new Setting(containerEl)
-			.setName('Event Template File')
+			.setName('Event line template file')
 			.setDesc('Path of the file containing template for the event')
 			.addText((text) => {
 				text
 					.setPlaceholder('Path/to/template.md')
-					.setValue(this.plugin.settings.iCalTemplatePath)
+					.setValue(this.plugin.settings.iCalEventLineTemplatePath)
 					.onChange(async (value) => {
-						this.plugin.settings.iCalTemplatePath = value
+						this.plugin.settings.iCalEventLineTemplatePath = value
 						await this.plugin.saveSettings();
 					})
 			});
-		/* iCal template file */
+
+		/* iCal event note template file */
+		new Setting(containerEl)
+			.setName('Event note template file')
+			.setDesc('Path of the file containing template for the event')
+			.addText((text) => {
+				text
+					.setPlaceholder('Path/to/template.md')
+					.setValue(this.plugin.settings.iCalEventNoteTemplatePath)
+					.onChange(async (value) => {
+						this.plugin.settings.iCalEventNoteTemplatePath = value
+						await this.plugin.saveSettings();
+					})
+			});
+
+		/* iCal event note folder */
+		new Setting(containerEl)
+			.setName('Event notes folder')
+			.setDesc('Folder containing event notes')
+			.addText((text) => {
+				text
+					.setPlaceholder('Path/to/folder/')
+					.setValue(this.plugin.settings.iCalEventNotesFolder)
+					.onChange(async (value) => {
+						this.plugin.settings.iCalEventNotesFolder = value
+						await this.plugin.saveSettings();
+					})
+			});
+
+		/* iCal event note file name template */
+		new Setting(containerEl)
+			.setName('Event notes filename template ')
+			.setDesc('Template for event notes file names')
+			.addText((text) => {
+				text
+					.setPlaceholder('Path/to/folder/')
+					.setValue(this.plugin.settings.iCalEventNotesFileNameTemplate)
+					.onChange(async (value) => {
+						this.plugin.settings.iCalEventNotesFileNameTemplate = value
+						await this.plugin.saveSettings();
+					})
+			});
+
+		/* Event date format */
 		new Setting(containerEl)
 			.setName('Event Date format')
 			.setDesc('Format to display the date of the event')
@@ -53,9 +96,9 @@ export default class ICalSettingsTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					})
 			});
-		/* iCal template file */
+		/* Event time */
 		new Setting(containerEl)
-			.setName('Event Date format')
+			.setName('Event time format')
 			.setDesc('Format to display the time of the event')
 			.addText((text) => {
 				text

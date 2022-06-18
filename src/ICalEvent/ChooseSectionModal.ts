@@ -10,6 +10,9 @@ export default class ChooseSectionModal extends Modal {
     selectedEvents: ICalEvent[]
     lineNumber: number = -1
     fileDate: string
+    insertAtBottom: boolean
+    bottomToggler: ToggleComponent
+    selectEl: DropdownComponent
 
     constructor(plugin: ICal, file: TFile, events: ICalEvent[], fileDate: string) {
         super(plugin.app)
@@ -18,6 +21,7 @@ export default class ChooseSectionModal extends Modal {
         this.events = events
         this.selectedEvents = events
         this.fileDate = fileDate
+        this.insertAtBottom = false
     }
 
     buildValueToggler(valueGrid: HTMLDivElement, event: ICalEvent) {
@@ -47,6 +51,28 @@ export default class ChooseSectionModal extends Modal {
         valueLabel.setText(`${event.shortEvent}`)
     }
 
+    buildBottomSelector(container: HTMLDivElement) {
+        const bottomSelectorContainer = container.createDiv({
+            cls: "frontmatter-value-selector-container"
+        })
+        const bottomTogglerContainer = bottomSelectorContainer.createDiv({
+            cls: "frontmatter-value-selector-toggler"
+        })
+        this.bottomToggler = new ToggleComponent(bottomTogglerContainer)
+        this.bottomToggler.setValue(this.insertAtBottom)
+        this.bottomToggler.onChange(value => {
+            this.insertAtBottom = value
+            if (value) {
+                this.lineNumber = -1
+                this.selectEl.setValue("")
+            }
+        })
+        const bottomLabel = bottomSelectorContainer.createDiv({
+            cls: "frontmatter-value-selector-label"
+        })
+        bottomLabel.setText(`Insert at bottom`)
+    }
+
     onOpen() {
         this.titleEl.setText("Select events to include")
         const eventSelectContainer = this.contentEl.createDiv({
@@ -55,9 +81,10 @@ export default class ChooseSectionModal extends Modal {
         this.events.forEach(event => this.buildValueToggler(eventSelectContainer, event))
 
         const sectionSelectContainer = this.contentEl.createDiv()
-        const selectEl = new DropdownComponent(sectionSelectContainer)
-        selectEl.addOption("", "Insert selected events after...")
-        selectEl.addOption("top_-1", "-- Insert at the top --")
+        this.selectEl = new DropdownComponent(sectionSelectContainer)
+        this.selectEl.addOption("", "Insert selected events after...")
+        this.selectEl.addOption("top_-1", "-- Insert at the top --")
+        this.buildBottomSelector(eventSelectContainer)
         const footer = this.contentEl.createDiv({
             cls: "frontmatter-value-grid-footer"
         })
@@ -65,26 +92,32 @@ export default class ChooseSectionModal extends Modal {
         saveButton.setIcon("checkmark")
 
         this.app.vault.read(this.file).then(result => {
+            const linesCount = result.split("\n").length
             result.split("\n").forEach((line, lineNumber) => {
-                selectEl.addOption(`body_${lineNumber}`, `${line.substring(0, 30)}${line.length > 30 ? "..." : ""}`)
+                this.selectEl.addOption(`body_${lineNumber}`, `${line.substring(0, 30)}${line.length > 30 ? "..." : ""}`)
             })
-            selectEl.onChange(() => {
-                const valueArray = selectEl.getValue().match(/(\w+)_(\d+)/)
-                const position = valueArray[1]
+            this.selectEl.onChange(() => {
+                const valueArray = this.selectEl.getValue().match(/(\w+)_(-?\d+)/)
                 this.lineNumber = Number(valueArray[2])
+                this.insertAtBottom = false
+                this.bottomToggler.setValue(false)
             })
             saveButton.onClick(() => {
-
-                if (this.lineNumber == -1) {
-                    this.app.vault.modify(this.file, this.selectedEvents.map(event => event.event).join('\n') + '\n' + result)
+                if (this.insertAtBottom) {
+                    this.app.vault.modify(this.file, result + '\n' + this.selectedEvents.map(event => event.eventLine).join('\n'))
                 } else {
-                    let newContent: string[] = []
-                    result.split('\n').forEach((_line, _lineNumber) => {
-                        newContent.push(_line)
-                        if (_lineNumber == this.lineNumber) { newContent.push(this.selectedEvents.map(event => event.event).join('\n')) }
-                    })
-                    this.app.vault.modify(this.file, newContent.join('\n'))
+                    if (this.lineNumber == -1) {
+                        this.app.vault.modify(this.file, this.selectedEvents.map(event => event.eventLine).join('\n') + '\n' + result)
+                    } else {
+                        let newContent: string[] = []
+                        result.split('\n').forEach((_line, _lineNumber) => {
+                            newContent.push(_line)
+                            if (_lineNumber == this.lineNumber) { newContent.push(this.selectedEvents.map(event => event.eventLine).join('\n')) }
+                        })
+                        this.app.vault.modify(this.file, newContent.join('\n'))
+                    }
                 }
+                this.selectedEvents.map(event => event.createNote())
                 this.close()
             })
         })

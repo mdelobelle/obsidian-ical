@@ -1,4 +1,4 @@
-import { FileView, Plugin, TFile, View, MarkdownView } from 'obsidian';
+import { Plugin, TFile, MarkdownView } from 'obsidian';
 import { ICalSettings, DEFAULT_SETTINGS } from "./src/settings/ICalSettings"
 import ICalSettingsTab from "./src/settings/ICalSettingsTab"
 import ICalEvent from "./src/ICalEvent/ICalEvent"
@@ -8,11 +8,25 @@ import moment from 'moment'
 export default class ICal extends Plugin {
 	settings: ICalSettings;
 
-	async getTemplate(): Promise<string | null> {
-		const templatePath = this.settings.iCalTemplatePath
-		if (templatePath) {
+	async getEventLineTemplate(): Promise<string | null> {
+		const eventLineTemplatePath = this.settings.iCalEventLineTemplatePath
+		if (eventLineTemplatePath) {
 			try {
-				const templateFile = this.app.vault.getAbstractFileByPath(templatePath)
+				const templateFile = this.app.vault.getAbstractFileByPath(eventLineTemplatePath)
+				if (templateFile instanceof TFile) {
+					const template = await this.app.vault.cachedRead(templateFile)
+					return template
+				}
+			} catch (error) {
+				return null
+			}
+		}
+	}
+	async getEventNoteTemplate(): Promise<string | null> {
+		const eventNoteTemplatePath = this.settings.iCalEventNoteTemplatePath
+		if (eventNoteTemplatePath) {
+			try {
+				const templateFile = this.app.vault.getAbstractFileByPath(eventNoteTemplatePath)
 				if (templateFile instanceof TFile) {
 					const template = await this.app.vault.cachedRead(templateFile)
 					return template
@@ -44,10 +58,11 @@ export default class ICal extends Plugin {
 					const calFolder = this.settings.icsFolder
 					const files = fs.readdirSync(calFolder)
 					let results = []
-					const template = await this.getTemplate()
+					const eventLineTemplate = await this.getEventLineTemplate()
+					const eventNoteTemplate = await this.getEventNoteTemplate()
 					for (let file of files) {
 						const filePath = calFolder + file
-						const event = await ICalEvent.extractCalInfo(filePath, fileDate, template, this)
+						const event = await ICalEvent.extractCalInfo(filePath, fileDate, eventLineTemplate, eventNoteTemplate, this)
 						if (event) { results.push(event) }
 					}
 					const events = results.sort(ICalEvent.compareEvents)
