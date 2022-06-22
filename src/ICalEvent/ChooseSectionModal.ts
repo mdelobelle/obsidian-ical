@@ -144,9 +144,6 @@ export default class ChooseSectionModal extends Modal {
                 this.bottomToggler.setValue(false)
             })
             saveButton.onClick(() => {
-                console.log("lines:", this.selectedEventsForLine)
-                console.log("notes:", this.selectedEventsForNote)
-
                 if (this.insertAtBottom) {
                     this.app.vault.modify(this.file, result + '\n' + this.selectedEventsForLine.map(event => event.eventLine).join('\n'))
                 } else {
