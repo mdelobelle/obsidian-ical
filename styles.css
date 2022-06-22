@@ -38,6 +38,15 @@
     margin-left: 10px;
     margin-top: -8px;
     font-size: smaller;
+    display: flex;
+}
+
+.eventLabelCalendarName {
+    margin-right: 1em;
+    font-size: xx-small;
+    color: white;
+    padding: 0em 1em;
+    border-radius: 1em;
 }
 
 
@@ -76,4 +85,47 @@
     justify-content: flex-end;
     align-items: center;
     margin-top: 10px;
+}
+
+.calendarTitleContainer {
+    display: flex;
+    align-items: flex-end;
+}
+
+.calendarTitle {
+    display: block;
+    margin-bottom: 0.5em;
+    font-size: x-small;
+    font-weight: 600;
+}
+
+.calendarRemoveButton {
+    padding: 0;
+    height: 20px !important;
+    margin-bottom: 2px;
+}
+
+.calendarInput {
+    display: block;
+    margin-bottom: 0.5em;
+}
+
+.calendarInput.large > input{
+    width: 100%;
+}
+
+.calendarInputLabel {
+    display: block;
+    font-size: xx-small;
+    font-weight: 200;
+}
+
+.addNewCalendarContainer{
+    margin-bottom: 0.5em;
+    display: flex
+}
+
+.addNewCalendarContainerSpacer{
+    width: 100%;
+    min-height: 1px;
 }

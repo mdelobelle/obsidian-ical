@@ -14,9 +14,11 @@ export default class ICalEvent {
 	fileDate: string = ""
 	event: CalendarComponent
 	plugin: ICal
+	calendarName: string
+	calendarId: number
 	createNote: () => void
 
-	constructor(plugin: ICal, filePath: string, fileDate: string, event: CalendarComponent, recStartDate?: moment.Moment, recEndDate?: moment.Moment) {
+	constructor(plugin: ICal, filePath: string, fileDate: string, event: CalendarComponent, calendarName: string, calendarId: number, recStartDate?: moment.Moment, recEndDate?: moment.Moment) {
 		this.event = event
 		this.start = recStartDate !== undefined ? recStartDate : moment(event.start);
 		this.end = recEndDate !== undefined ? recEndDate : moment(event.end);
@@ -24,6 +26,8 @@ export default class ICalEvent {
 		this.endDay = this.end.format("YYYYMMDD")
 		this.fileDate = fileDate
 		this.plugin = plugin
+		this.calendarName = calendarName
+		this.calendarId = calendarId
 
 		this.createNote = () => {
 			const folder = plugin.settings.iCalEventNotesFolder
@@ -145,7 +149,7 @@ export default class ICalEvent {
 		}
 	}
 
-	static async extractCalInfo(filePath: string, fileDate: string, eventLineTemplate: string, eventNoteTemplate: string, plugin: ICal): Promise<ICalEvent | null> {
+	static async extractCalInfo(filePath: string, fileDate: string, eventLineTemplate: string, eventNoteTemplate: string, plugin: ICal, calendarName: string, calendarId: number): Promise<ICalEvent | null> {
 
 		var data = parseFile(filePath);
 
@@ -174,7 +178,7 @@ export default class ICalEvent {
 					&& event.recurrenceid === undefined) {
 
 					if (plugin.app.vault.adapter instanceof FileSystemAdapter) {
-						const iCalEvent = new ICalEvent(plugin, filePath, fileDate, event)
+						const iCalEvent = new ICalEvent(plugin, filePath, fileDate, event, calendarName, calendarId)
 						iCalEvent.renderShortEvent(35)
 						iCalEvent.renderEventLine(eventLineTemplate)
 						iCalEvent.renderEventNote(eventNoteTemplate)
@@ -254,7 +258,7 @@ export default class ICalEvent {
 							&& recStartDate.isAfter(rangeStart)
 							&& recEndDate.isBefore(rangeEnd)) {
 							if (plugin.app.vault.adapter instanceof FileSystemAdapter) {
-								const iCalEvent = new ICalEvent(plugin, filePath, fileDate, event, recStartDate, recEndDate)
+								const iCalEvent = new ICalEvent(plugin, filePath, fileDate, event, calendarName, calendarId, recStartDate, recEndDate)
 								iCalEvent.renderShortEvent(35)
 								iCalEvent.renderEventLine(eventLineTemplate)
 								iCalEvent.renderEventNote(eventNoteTemplate)

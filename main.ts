@@ -53,24 +53,33 @@ export default class ICal extends Plugin {
 			callback: async () => {
 				const activeView = this.app.workspace.getActiveViewOfType(MarkdownView)
 				if (activeView) {
-					const fileDate = moment(activeView.file.basename, this.settings.dailyNoteDateFormat).format("YYYYMMDD")
-					const fs = require('fs');
-					const calFolder = this.settings.icsFolder
-					try {
-						const files = fs.readdirSync(calFolder)
-						let results = []
-						const eventLineTemplate = await this.getEventLineTemplate()
-						const eventNoteTemplate = await this.getEventNoteTemplate()
-						for (let file of files) {
-							const filePath = calFolder + file
-							const event = await ICalEvent.extractCalInfo(filePath, fileDate, eventLineTemplate, eventNoteTemplate, this)
-							if (event) { results.push(event) }
+					const _fileDate = moment(activeView.file.basename, this.settings.dailyNoteDateFormat)
+					if (_fileDate.isValid()) {
+						const fileDate = _fileDate.format("YYYYMMDD")
+						const fs = require('fs');
+						const results = []
+						let calendarId = 1
+						for (const calendar of this.settings.icsCalendars) {
+							try {
+								const files = fs.readdirSync(calendar.path)
+
+								const eventLineTemplate = await this.getEventLineTemplate()
+								const eventNoteTemplate = await this.getEventNoteTemplate()
+								for (let file of files) {
+									const filePath = calendar.path + file
+									const event = await ICalEvent.extractCalInfo(filePath, fileDate, eventLineTemplate, eventNoteTemplate, this, calendar.name, calendarId)
+									if (event) { results.push(event) }
+								}
+								calendarId += 1
+							} catch (error) {
+								new Notice(`iCal - ${calendar.name}: No such directory`);
+							}
 						}
 						const events = results.sort(ICalEvent.compareEvents)
 						const modal = new ChooseSectionModal(this, activeView.file, events, fileDate)
 						modal.open()
-					} catch (error) {
-						new Notice('iCal settings: No such directory');
+					} else {
+						new Notice('iCal - you are not in a daily note')
 					}
 				}
 			}

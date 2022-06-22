@@ -45,9 +45,15 @@ export default class ChooseSectionModal extends Modal {
         if (this.selectedEventsForNote.includes(event)) {
             noteToggler.setValue(true)
         }
-        const eventLabel = eventSelectorContainer.createDiv({
+        const eventLabelContainer = eventSelectorContainer.createDiv({
             cls: "ical-event-selector-label"
         })
+        const eventLabelCalendarName = eventLabelContainer.createDiv({
+            cls: "eventLabelCalendarName"
+        })
+        eventLabelCalendarName.setAttr("style", `background-color: var(--chart-color-${event.calendarId % 8 + 1})`)
+        eventLabelCalendarName.setText(event.calendarName)
+        const eventLabel = eventLabelContainer.createDiv()
         eventLabel.setText(`${event.shortEvent}`)
         lineToggler.onChange(value => {
             if (value && !this.selectedEventsForLine.includes(event)) {
