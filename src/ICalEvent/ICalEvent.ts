@@ -218,7 +218,6 @@ export default class ICalEvent {
 
 					// Loop through the set of date entries to see which recurrences should be printed.
 					for (var i in dates) {
-
 						var date = dates[i];
 						var curEvent = event;
 						var showRecurrence = true;
@@ -235,8 +234,9 @@ export default class ICalEvent {
 							// We found an override, so for this recurrence, use a potentially different title, start date, and duration.
 							// @ts-expect-error
 							curEvent = curEvent.recurrences[dateLookupKey];
-							recStartDate = moment(curEvent.start).subtract(moment(curEvent.start).utcOffset() - initialUtcOffSet, 'minute');
-							curDuration = parseInt(moment(curEvent.end).format("x")) - parseInt(recStartDate.format("x"));
+							recStartDate = moment(curEvent.start)
+							curDuration = parseInt(moment(curEvent.end)
+								.format("x")) - parseInt(recStartDate.format("x"));
 						}
 						// If there's no recurrence override, check for an exception date.  Exception dates represent exceptions to the rule.
 						else if ((curEvent.exdate != undefined) && (curEvent.exdate[dateLookupKey] != undefined)) {
