@@ -16,9 +16,21 @@ export default class ICalEvent {
 	plugin: ICal
 	calendarName: string
 	calendarId: number
+	summary: string = ""
 	createNote: () => void
 
-	constructor(plugin: ICal, filePath: string, fileDate: string, event: CalendarComponent, calendarName: string, calendarId: number, recStartDate?: moment.Moment, recEndDate?: moment.Moment) {
+	constructor(
+		plugin: ICal,
+		fileDate: string,
+		eventLineTemplate: string,
+		eventNoteTemplate: string,
+		event: CalendarComponent,
+		calendarName: string,
+		calendarId: number,
+		recStartDate?: moment.Moment,
+		recEndDate?: moment.Moment,
+		summary?: string
+	) {
 		this.event = event
 		this.start = recStartDate !== undefined ? recStartDate : moment(event.start);
 		this.end = recEndDate !== undefined ? recEndDate : moment(event.end);
@@ -28,6 +40,20 @@ export default class ICalEvent {
 		this.plugin = plugin
 		this.calendarName = calendarName
 		this.calendarId = calendarId
+
+		Object.defineProperty(this, "summary", {
+			get: function () {
+				return this._summary
+			},
+			set: function (val) {
+				this._summary = val;
+				this.renderShortEvent(35)
+				this.renderEventLine(eventLineTemplate)
+				this.renderEventNote(eventNoteTemplate)
+			}
+		})
+
+		this.summary = summary ? summary : event.summary
 
 		this.createNote = () => {
 			const folder = plugin.settings.iCalEventNotesFolder
@@ -39,10 +65,10 @@ export default class ICalEvent {
 				filename = filename.replace(/{{endtime}}/g, this.end.format(plugin.settings.timeFormat))
 				filename = filename.replace(/{{start}}/g, this.eventStart())
 				filename = filename.replace(/{{end}}/g, this.eventEnd())
-				filename = filename.replace(/{{summary}}/g, `${this.event.summary.replace(/[:/]/g, "-")}`)
+				filename = filename.replace(/{{summary}}/g, `${this.summary.replace(/[:/]/g, "-")}`)
 				filename = filename.replace(/{{organizer}}/g, `${this.event.organizer ? (<any>this.event.organizer)['params']['CN'].replace(/"/g, '') : ""}`)
 			} else {
-				filename = String(`${this.start.format(plugin.settings.dateFormat)} - ${this.start.format(plugin.settings.timeFormat)} - ${this.event.summary.replace(/[:/]/g, "-")}`)
+				filename = String(`${this.start.format(plugin.settings.dateFormat)} - ${this.start.format(plugin.settings.timeFormat)} - ${this.summary.replace(/[:/]/g, "-")}`)
 			}
 			filename = filename.replace(/[:/]/g, "-")
 			plugin.app.vault.create(folder + filename + ".md", this.eventNote)
@@ -58,7 +84,7 @@ export default class ICalEvent {
 			template = template.replace(/{{endtime}}/g, this.end.format(this.plugin.settings.timeFormat))
 			template = template.replace(/{{start}}/g, this.eventStart())
 			template = template.replace(/{{end}}/g, this.eventEnd())
-			template = template.replace(/{{summary}}/g, `${this.event.summary}`)
+			template = template.replace(/{{summary}}/g, `${this.summary}`)
 			template = template.replace(/{{organizer}}/g, `${this.event.organizer ? (<any>this.event.organizer)['params']['CN'].replace(/"/g, '') : ""}`)
 			template = template.replace(/{{organizer.link}}/g, `${this.event.organizer ? `[[${(<any>this.event.organizer)['params']['CN'].replace(/"/g, '')}]]` : ""}`)
 			if (Object.keys(this.event).includes("attendee")) {
@@ -80,12 +106,12 @@ export default class ICalEvent {
 			template = template.replace(/{{attendees.link.list}}/g, attendees.map(attendee => `- [[${attendee}]]`).join('\n'))
 			this.eventNote = template
 		} else {
-			this.eventNote = String(`### ${this.eventStart()} - ${this.eventEnd()} : ${this.event.summary}`)
+			this.eventNote = String(`### ${this.eventStart()} - ${this.eventEnd()} : ${this.summary}`)
 		}
 	}
 
 	renderShortEvent(length: number) {
-		this.shortEvent = String(`${this.eventStart()} - ${this.eventEnd()} : ${typeof this.event.summary == "string" ? this.event.summary.substring(0, length) + '...' : ''}`)
+		this.shortEvent = String(`${this.eventStart()} - ${this.eventEnd()} : ${typeof this.summary == "string" ? this.summary.substring(0, length) + '...' : ''}`)
 	}
 
 	renderEventLine(template?: string): void {
@@ -97,7 +123,7 @@ export default class ICalEvent {
 			template = template.replace(/{{endtime}}/g, this.end.format(this.plugin.settings.timeFormat))
 			template = template.replace(/{{start}}/g, this.eventStart())
 			template = template.replace(/{{end}}/g, this.eventEnd())
-			template = template.replace(/{{summary}}/g, `${this.event.summary.replace(/[:/]/g, "-")}`)
+			template = template.replace(/{{summary}}/g, `${this.summary.replace(/[:/]/g, "-")}`)
 			template = template.replace(/{{organizer}}/g, `${this.event.organizer ? (<any>this.event.organizer)['params']['CN'].replace(/"/g, '') : ""}`)
 			template = template.replace(/{{organizer.link}}/g, `${this.event.organizer ? `[[${(<any>this.event.organizer)['params']['CN'].replace(/"/g, '')}]]` : ""}`)
 			if (Object.keys(this.event).includes("attendee")) {
@@ -119,7 +145,7 @@ export default class ICalEvent {
 			template = template.replace(/{{attendees.link.list}}/g, attendees.map(attendee => `- [[${attendee}]]`).join('\n'))
 			this.eventLine = template
 		} else {
-			this.eventLine = String(`### ${this.eventStart()} - ${this.eventEnd()} : ${this.event.summary}`)
+			this.eventLine = String(`### ${this.eventStart()} - ${this.eventEnd()} : ${this.summary}`)
 		}
 	}
 
@@ -149,7 +175,15 @@ export default class ICalEvent {
 		}
 	}
 
-	static async extractCalInfo(filePath: string, fileDate: string, eventLineTemplate: string, eventNoteTemplate: string, plugin: ICal, calendarName: string, calendarId: number): Promise<ICalEvent | null> {
+	static async extractCalInfo(
+		filePath: string,
+		fileDate: string,
+		eventLineTemplate: string,
+		eventNoteTemplate: string,
+		plugin: ICal,
+		calendarName: string,
+		calendarId: number
+	): Promise<ICalEvent | null> {
 
 		var data = parseFile(filePath);
 
@@ -178,7 +212,15 @@ export default class ICalEvent {
 					&& event.recurrenceid === undefined) {
 
 					if (plugin.app.vault.adapter instanceof FileSystemAdapter) {
-						const iCalEvent = new ICalEvent(plugin, filePath, fileDate, event, calendarName, calendarId)
+						const iCalEvent = new ICalEvent(
+							plugin,
+							fileDate,
+							eventLineTemplate,
+							eventNoteTemplate,
+							event,
+							calendarName,
+							calendarId
+						)
 						iCalEvent.renderShortEvent(35)
 						iCalEvent.renderEventLine(eventLineTemplate)
 						iCalEvent.renderEventNote(eventNoteTemplate)
@@ -258,7 +300,16 @@ export default class ICalEvent {
 							&& recStartDate.isAfter(rangeStart)
 							&& recEndDate.isBefore(rangeEnd)) {
 							if (plugin.app.vault.adapter instanceof FileSystemAdapter) {
-								const iCalEvent = new ICalEvent(plugin, filePath, fileDate, event, calendarName, calendarId, recStartDate, recEndDate)
+								const iCalEvent = new ICalEvent(
+									plugin,
+									fileDate,
+									eventLineTemplate,
+									eventNoteTemplate,
+									event,
+									calendarName,
+									calendarId,
+									recStartDate,
+									recEndDate)
 								iCalEvent.renderShortEvent(35)
 								iCalEvent.renderEventLine(eventLineTemplate)
 								iCalEvent.renderEventNote(eventNoteTemplate)

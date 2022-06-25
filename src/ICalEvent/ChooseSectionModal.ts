@@ -1,4 +1,4 @@
-import { Modal, DropdownComponent, ToggleComponent, TFile, ButtonComponent } from "obsidian"
+import { Modal, DropdownComponent, ToggleComponent, TFile, ButtonComponent, TextComponent, ExtraButtonComponent } from "obsidian"
 import ICal from "../../main"
 import ICalEvent from "./ICalEvent"
 
@@ -27,6 +27,37 @@ export default class ChooseSectionModal extends Modal {
         this.insertAtBottom = false
     }
 
+    buildSummaryModifier(summaryContainer: HTMLDivElement, formContainer: HTMLDivElement, event: ICalEvent) {
+        const initialSummary = event.summary
+        const summaryContainerForm = formContainer.createDiv({
+            cls: "summary-form-container"
+        })
+        const summaryInput = new TextComponent(summaryContainerForm)
+        summaryInput.setValue(event.summary)
+        summaryInput.onChange(value => {
+            event.summary = value
+        })
+        const summaryInputValidateContainer = summaryContainerForm.createDiv({
+            cls: "summaryButtonsContainer"
+        })
+        const summaryInputValidate = new ExtraButtonComponent(summaryInputValidateContainer)
+        summaryInputValidate.setIcon("check")
+        summaryInputValidate.onClick(() => {
+            summaryContainer.setText(`${event.shortEvent}`)
+            formContainer.removeChild(summaryContainerForm)
+        })
+        const summaryInputCancelContainer = summaryContainerForm.createDiv({
+            cls: "summaryButtonsContainer"
+        })
+        const summaryInputCancel = new ExtraButtonComponent(summaryInputCancelContainer)
+        summaryInputCancel.setIcon("cross")
+        summaryInputCancel.onClick(() => {
+            event.summary = initialSummary
+            summaryContainer.setText(`${event.shortEvent}`)
+            formContainer.removeChild(summaryContainerForm)
+        })
+    }
+
     buildEventToggler(valueGrid: HTMLDivElement, event: ICalEvent) {
         const eventSelectorContainer = valueGrid.createDiv({
             cls: "ical-event-selector-container"
@@ -53,7 +84,9 @@ export default class ChooseSectionModal extends Modal {
         })
         eventLabelCalendarName.setAttr("style", `background-color: var(--chart-color-${event.calendarId % 8 + 1})`)
         eventLabelCalendarName.setText(event.calendarName)
-        const eventLabel = eventLabelContainer.createDiv()
+        const eventLabel = eventLabelContainer.createDiv({
+            cls: "eventLabelSummary"
+        })
         eventLabel.setText(`${event.shortEvent}`)
         lineToggler.onChange(value => {
             if (value && !this.selectedEventsForLine.includes(event)) {
@@ -79,6 +112,10 @@ export default class ChooseSectionModal extends Modal {
                 this.selectedEventsForNote.remove(event)
             }
         })
+        eventLabel.onclick = () => {
+            eventLabel.textContent = ""
+            this.buildSummaryModifier(eventLabel, eventSelectorContainer, event)
+        }
     }
 
     buildBottomSelector(container: HTMLDivElement) {
