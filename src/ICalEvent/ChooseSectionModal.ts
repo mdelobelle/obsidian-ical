@@ -1,6 +1,7 @@
 import { Modal, DropdownComponent, ToggleComponent, TFile, ButtonComponent, TextComponent, ExtraButtonComponent } from "obsidian"
 import ICal from "../../main"
 import ICalEvent from "./ICalEvent"
+import ChangeAttendeesModal from "./ChangeAttendeesModal"
 
 export default class ChooseSectionModal extends Modal {
 
@@ -27,6 +28,11 @@ export default class ChooseSectionModal extends Modal {
         this.insertAtBottom = false
     }
 
+    buildAttendeesModifier(event: ICalEvent) {
+        const changeAttendeesModal = new ChangeAttendeesModal(this.plugin, event)
+        changeAttendeesModal.open()
+    }
+
     buildSummaryModifier(summaryContainer: HTMLDivElement, formContainer: HTMLDivElement, event: ICalEvent) {
         const initialSummary = event.summary
         const summaryContainerForm = formContainer.createDiv({
@@ -38,7 +44,7 @@ export default class ChooseSectionModal extends Modal {
             event.summary = value
         })
         const summaryInputValidateContainer = summaryContainerForm.createDiv({
-            cls: "summaryButtonsContainer"
+            cls: "inlineFormButtonsContainer"
         })
         const summaryInputValidate = new ExtraButtonComponent(summaryInputValidateContainer)
         summaryInputValidate.setIcon("check")
@@ -47,7 +53,7 @@ export default class ChooseSectionModal extends Modal {
             formContainer.removeChild(summaryContainerForm)
         })
         const summaryInputCancelContainer = summaryContainerForm.createDiv({
-            cls: "summaryButtonsContainer"
+            cls: "inlineFormButtonsContainer"
         })
         const summaryInputCancel = new ExtraButtonComponent(summaryInputCancelContainer)
         summaryInputCancel.setIcon("cross")
@@ -76,6 +82,10 @@ export default class ChooseSectionModal extends Modal {
         if (this.selectedEventsForNote.includes(event)) {
             noteToggler.setValue(true)
         }
+        const eventAttendeesChanger = eventSelectorContainer.createDiv({
+            cls: "ical-event-attendees-changer"
+        })
+        eventAttendeesChanger.setText("👥")
         const eventLabelContainer = eventSelectorContainer.createDiv({
             cls: "ical-event-selector-label"
         })
@@ -112,37 +122,17 @@ export default class ChooseSectionModal extends Modal {
                 this.selectedEventsForNote.remove(event)
             }
         })
+        eventAttendeesChanger.onclick = () => {
+            this.buildAttendeesModifier(event)
+        }
         eventLabel.onclick = () => {
             eventLabel.textContent = ""
             this.buildSummaryModifier(eventLabel, eventSelectorContainer, event)
         }
     }
 
-    buildBottomSelector(container: HTMLDivElement) {
-        const bottomSelectorContainer = container.createDiv({
-            cls: "ical-bottom-selector-container"
-        })
-        const bottomTogglerContainer = bottomSelectorContainer.createDiv({
-            cls: "ical-bottom-selector-toggler"
-        })
-        this.bottomToggler = new ToggleComponent(bottomTogglerContainer)
-        this.bottomToggler.setValue(this.insertAtBottom)
-        this.bottomToggler.onChange(value => {
-            this.insertAtBottom = value
-            if (value) {
-                this.lineNumber = -1
-                this.selectSection.setValue("")
-            }
-        })
-        const bottomLabel = bottomSelectorContainer.createDiv({
-            cls: "ical-bottom-selector-label"
-        })
-        bottomLabel.setText(`Insert at bottom`)
-    }
-
-    onOpen() {
-        this.titleEl.setText("Select events to include")
-        const eventSelectContainer = this.contentEl.createDiv({
+    buildEventSelector(container: HTMLElement) {
+        const eventSelectContainer = container.createDiv({
             cls: "ical-events-grid"
         })
         const eventSelectHeader = eventSelectContainer.createDiv({
@@ -161,15 +151,39 @@ export default class ChooseSectionModal extends Modal {
         })
         eventHeader.setText("Event")
         this.events.forEach(event => this.buildEventToggler(eventSelectContainer, event))
+    }
 
-        const sectionSelectContainer = this.contentEl.createDiv({
+    buildBottomSelector(container: HTMLElement) {
+        const bottomTogglerContainer = container.createDiv({
+            cls: "ical-bottom-selector-toggler"
+        })
+        this.bottomToggler = new ToggleComponent(bottomTogglerContainer)
+        this.bottomToggler.setValue(this.insertAtBottom)
+        this.bottomToggler.onChange(value => {
+            this.insertAtBottom = value
+            if (value) {
+                this.lineNumber = -1
+                this.selectSection.setValue("")
+            }
+        })
+        const bottomLabel = container.createDiv({
+            cls: "ical-bottom-selector-label"
+        })
+        bottomLabel.setText(`Insert at bottom`)
+    }
+
+    buildSectionSelector(container: HTMLElement) {
+        const sectionSelectContainer = container.createDiv({
             cls: "ical-section-selection-container"
         })
         this.selectSection = new DropdownComponent(sectionSelectContainer)
         this.selectSection.addOption("", "Insert selected events after...")
         this.selectSection.addOption("top_-1", "-- Insert at the top --")
         this.buildBottomSelector(sectionSelectContainer)
-        const footer = this.contentEl.createDiv({
+    }
+
+    buildFooter(container: HTMLElement) {
+        const footer = container.createDiv({
             cls: "ical-events-grid-footer"
         })
         const saveButton = new ButtonComponent(footer)
@@ -206,5 +220,12 @@ export default class ChooseSectionModal extends Modal {
                 this.close()
             })
         })
+    }
+
+    onOpen() {
+        this.titleEl.setText("Select events to include")
+        this.buildEventSelector(this.contentEl)
+        this.buildSectionSelector(this.contentEl)
+        this.buildFooter(this.contentEl)
     }
 }

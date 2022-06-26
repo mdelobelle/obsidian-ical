@@ -17,7 +17,9 @@ export default class ICalEvent {
 	calendarName: string
 	calendarId: number
 	summary: string = ""
+	attendees: { name: string, alias: string }[] = []
 	createNote: () => void
+	getAttendeesFromEvent: () => { name: string, alias: string }[]
 
 	constructor(
 		plugin: ICal,
@@ -29,9 +31,9 @@ export default class ICalEvent {
 		calendarId: number,
 		recStartDate?: moment.Moment,
 		recEndDate?: moment.Moment,
-		summary?: string
 	) {
 		this.event = event
+		console.log(this.event)
 		this.start = recStartDate !== undefined ? recStartDate : moment(event.start);
 		this.end = recEndDate !== undefined ? recEndDate : moment(event.end);
 		this.startDay = this.start.format("YYYYMMDD")
@@ -53,7 +55,47 @@ export default class ICalEvent {
 			}
 		})
 
-		this.summary = summary ? summary : event.summary
+		Object.defineProperty(this, "attendees", {
+			get: function () {
+				return this._attendees
+			},
+			set: function (val) {
+				this._attendees = val;
+				//we don't render until summary has been set: means that all object has not been built yet
+				if (this.summary) {
+					this.renderEventLine(eventLineTemplate)
+					this.renderEventNote(eventNoteTemplate)
+				}
+			}
+		})
+
+		this.getAttendeesFromEvent = () => {
+			let attendees: { name: string, alias: string }[] = []
+			if (Object.keys(this.event).includes("attendee")) {
+				const _attendees = Object.entries(this.event).filter(item => item[0] == "attendee")[0][1]
+				if (_attendees instanceof Array) {
+					_attendees.forEach(attendee => {
+						const _params = Object.entries(attendee).filter(item => item[0] == "params")
+						const params = _params.length > 0 ? _params[0][1] : null
+						const _cn = params ? Object.entries(params).filter(item => item[0] == "CN") : null
+						if (_cn && `${_cn[0][1]}` != `${(<any>this.event.organizer)["params"]["CN"]}`) {
+							let attendeeFromEvent = `${_cn[0][1]}`.replace(/"/g, '')
+							let filteredStoredAliases = this.plugin.settings.attendeesAliases.filter(a => a.name === attendeeFromEvent)
+							let aliasedAttendee = filteredStoredAliases.length > 0 ? filteredStoredAliases[0].alias : attendeeFromEvent
+							attendees.push({ name: attendeeFromEvent, alias: aliasedAttendee })
+						}
+					})
+				} else {
+					let attendeeFromEvent = _attendees["params"]["CN"].replace(/"/g, '')
+					let filteredStoredAliases = this.plugin.settings.attendeesAliases.filter(a => a.name === attendeeFromEvent)
+					let aliasedAttendee = filteredStoredAliases.length > 0 ? filteredStoredAliases[0].alias : attendeeFromEvent
+					attendees.push({ name: attendeeFromEvent, alias: aliasedAttendee })
+				}
+			}
+			return attendees
+		}
+		this.attendees = this.getAttendeesFromEvent()
+		this.summary = event.summary
 
 		this.createNote = () => {
 			const folder = plugin.settings.iCalEventNotesFolder
@@ -75,36 +117,27 @@ export default class ICalEvent {
 		}
 	}
 
+	renderTemplate(_template: string) {
+		let template = _template
+		template = template.replace(/{{startday}}/g, this.start.format(this.plugin.settings.dateFormat))
+		template = template.replace(/{{starttime}}/g, this.start.format(this.plugin.settings.timeFormat))
+		template = template.replace(/{{endday}}/g, this.end.format(this.plugin.settings.dateFormat))
+		template = template.replace(/{{endtime}}/g, this.end.format(this.plugin.settings.timeFormat))
+		template = template.replace(/{{start}}/g, this.eventStart())
+		template = template.replace(/{{end}}/g, this.eventEnd())
+		template = template.replace(/{{summary}}/g, `${this.summary.replace(/[:/]/g, "-")}`)
+		template = template.replace(/{{organizer}}/g, `${this.event.organizer ? (<any>this.event.organizer)['params']['CN'].replace(/"/g, '') : ""}`)
+		template = template.replace(/{{organizer.link}}/g, `${this.event.organizer ? `[[${(<any>this.event.organizer)['params']['CN'].replace(/"/g, '')}]]` : ""}`)
+		template = template.replace(/{{attendees.inline}}/g, this.attendees.map(a => a.alias).join(", "))
+		template = template.replace(/{{attendees.list}}/g, this.attendees.map(a => `- ${a.alias}`).join('\n'))
+		template = template.replace(/{{attendees.link.inline}}/g, this.attendees.map(a => `[[${a.alias}]]`).join(", "))
+		template = template.replace(/{{attendees.link.list}}/g, this.attendees.map(a => `- [[${a.alias}]]`).join('\n'))
+		return template
+	}
+
 	renderEventNote(template?: string) {
 		if (template) {
-			let attendees: string[] = []
-			template = template.replace(/{{startday}}/g, this.start.format(this.plugin.settings.dateFormat))
-			template = template.replace(/{{starttime}}/g, this.start.format(this.plugin.settings.timeFormat))
-			template = template.replace(/{{endday}}/g, this.end.format(this.plugin.settings.dateFormat))
-			template = template.replace(/{{endtime}}/g, this.end.format(this.plugin.settings.timeFormat))
-			template = template.replace(/{{start}}/g, this.eventStart())
-			template = template.replace(/{{end}}/g, this.eventEnd())
-			template = template.replace(/{{summary}}/g, `${this.summary}`)
-			template = template.replace(/{{organizer}}/g, `${this.event.organizer ? (<any>this.event.organizer)['params']['CN'].replace(/"/g, '') : ""}`)
-			template = template.replace(/{{organizer.link}}/g, `${this.event.organizer ? `[[${(<any>this.event.organizer)['params']['CN'].replace(/"/g, '')}]]` : ""}`)
-			if (Object.keys(this.event).includes("attendee")) {
-				const _attendees: Array<Record<string, string>> = Object.entries(this.event).filter(item => item[0] == "attendee")[0][1]
-				if (_attendees instanceof Array) {
-					_attendees.forEach(attendee => {
-						const _params = Object.entries(attendee).filter(item => item[0] == "params")
-						const params = _params.length > 0 ? _params[0][1] : null
-						const _cn = params ? Object.entries(params).filter(item => item[0] == "CN") : null
-						if (_cn && `${_cn[0][1]}` != `${(<any>this.event.organizer)["params"]["CN"]}`) { attendees.push(`${_cn[0][1]}`.replace(/"/g, '')) }
-					})
-				} else {
-					attendees.push(_attendees["params"]["CN"])
-				}
-			}
-			template = template.replace(/{{attendees.inline}}/g, attendees.join(", "))
-			template = template.replace(/{{attendees.list}}/g, attendees.map(attendee => `- ${attendee}`).join('\n'))
-			template = template.replace(/{{attendees.link.inline}}/g, attendees.map(attendee => `[[${attendee}]]`).join(", "))
-			template = template.replace(/{{attendees.link.list}}/g, attendees.map(attendee => `- [[${attendee}]]`).join('\n'))
-			this.eventNote = template
+			this.eventNote = this.renderTemplate(template)
 		} else {
 			this.eventNote = String(`### ${this.eventStart()} - ${this.eventEnd()} : ${this.summary}`)
 		}
@@ -116,34 +149,7 @@ export default class ICalEvent {
 
 	renderEventLine(template?: string): void {
 		if (template) {
-			let attendees: string[] = []
-			template = template.replace(/{{startday}}/g, this.start.format(this.plugin.settings.dateFormat))
-			template = template.replace(/{{starttime}}/g, this.start.format(this.plugin.settings.timeFormat))
-			template = template.replace(/{{endday}}/g, this.end.format(this.plugin.settings.dateFormat))
-			template = template.replace(/{{endtime}}/g, this.end.format(this.plugin.settings.timeFormat))
-			template = template.replace(/{{start}}/g, this.eventStart())
-			template = template.replace(/{{end}}/g, this.eventEnd())
-			template = template.replace(/{{summary}}/g, `${this.summary.replace(/[:/]/g, "-")}`)
-			template = template.replace(/{{organizer}}/g, `${this.event.organizer ? (<any>this.event.organizer)['params']['CN'].replace(/"/g, '') : ""}`)
-			template = template.replace(/{{organizer.link}}/g, `${this.event.organizer ? `[[${(<any>this.event.organizer)['params']['CN'].replace(/"/g, '')}]]` : ""}`)
-			if (Object.keys(this.event).includes("attendee")) {
-				const _attendees: Array<Record<string, string>> = Object.entries(this.event).filter(item => item[0] == "attendee")[0][1]
-				if (_attendees instanceof Array) {
-					_attendees.forEach(attendee => {
-						const _params = Object.entries(attendee).filter(item => item[0] == "params")
-						const params = _params.length > 0 ? _params[0][1] : null
-						const _cn = params ? Object.entries(params).filter(item => item[0] == "CN") : null
-						if (_cn && `${_cn[0][1]}` != `${(<any>this.event.organizer)["params"]["CN"]}`) { attendees.push(`${_cn[0][1]}`.replace(/"/g, '')) }
-					})
-				} else {
-					attendees.push(_attendees["params"]["CN"])
-				}
-			}
-			template = template.replace(/{{attendees.inline}}/g, attendees.join(", "))
-			template = template.replace(/{{attendees.list}}/g, attendees.map(attendee => `- ${attendee}`).join('\n'))
-			template = template.replace(/{{attendees.link.inline}}/g, attendees.map(attendee => `[[${attendee}]]`).join(", "))
-			template = template.replace(/{{attendees.link.list}}/g, attendees.map(attendee => `- [[${attendee}]]`).join('\n'))
-			this.eventLine = template
+			this.eventLine = this.renderTemplate(template)
 		} else {
 			this.eventLine = String(`### ${this.eventStart()} - ${this.eventEnd()} : ${this.summary}`)
 		}
@@ -221,9 +227,6 @@ export default class ICalEvent {
 							calendarName,
 							calendarId
 						)
-						iCalEvent.renderShortEvent(35)
-						iCalEvent.renderEventLine(eventLineTemplate)
-						iCalEvent.renderEventNote(eventNoteTemplate)
 						return (iCalEvent)
 					}
 					else {
@@ -287,7 +290,6 @@ export default class ICalEvent {
 						}
 
 						// Set the the title and the end date from either the regular event or the recurrence override.
-						var recurrenceTitle = curEvent.summary;
 						let recEndDate = moment(parseInt(recStartDate.format("x")) + curDuration, 'x');
 
 						// If this recurrence ends before the start of the date range, or starts after the end of the date range, 
@@ -310,9 +312,6 @@ export default class ICalEvent {
 									calendarId,
 									recStartDate,
 									recEndDate)
-								iCalEvent.renderShortEvent(35)
-								iCalEvent.renderEventLine(eventLineTemplate)
-								iCalEvent.renderEventNote(eventNoteTemplate)
 								return (iCalEvent)
 							}
 							else {

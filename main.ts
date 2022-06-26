@@ -60,20 +60,20 @@ export default class ICal extends Plugin {
 						const results = []
 						let calendarId = 1
 						for (const calendar of this.settings.icsCalendars) {
-							try {
-								const files = fs.readdirSync(calendar.path)
+							//try {
+							const files = fs.readdirSync(calendar.path)
 
-								const eventLineTemplate = await this.getEventLineTemplate()
-								const eventNoteTemplate = await this.getEventNoteTemplate()
-								for (let file of files) {
-									const filePath = calendar.path + file
-									const event = await ICalEvent.extractCalInfo(filePath, fileDate, eventLineTemplate, eventNoteTemplate, this, calendar.name, calendarId)
-									if (event) { results.push(event) }
-								}
-								calendarId += 1
-							} catch (error) {
-								new Notice(`iCal - ${calendar.name}: No such directory`);
+							const eventLineTemplate = await this.getEventLineTemplate()
+							const eventNoteTemplate = await this.getEventNoteTemplate()
+							for (let file of files) {
+								const filePath = calendar.path + file
+								const event = await ICalEvent.extractCalInfo(filePath, fileDate, eventLineTemplate, eventNoteTemplate, this, calendar.name, calendarId)
+								if (event) { results.push(event) }
 							}
+							calendarId += 1
+							//} catch (error) {
+							//	new Notice(`iCal - ${calendar.name}: No such directory`);
+							//}
 						}
 						const events = results.sort(ICalEvent.compareEvents)
 						const modal = new ChooseSectionModal(this, activeView.file, events, fileDate)

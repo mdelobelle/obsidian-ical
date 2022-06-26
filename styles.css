@@ -65,21 +65,16 @@
     font-size: smaller;
 }
 
-.ical-bottom-selector-container{
-    display: flex;
-    margin-left: 10px;
-    margin-top: 6px;
-}
-
 .ical-bottom-selector-toggler {
     display: inline-block;
+    margin-left: 10px;
     margin-right: 10px;
-    padding-top: 3px;
+    padding-top: 4px;
 }
 
 .ical-bottom-selector-label{
-    margin-top: 2px;
     font-size: small;
+    padding-top: 0.3em;
 }
 
 
@@ -146,11 +141,40 @@
     width: 100%;
 }
 
-.summaryButtonsContainer{
+.inlineFormButtonsContainer{
     padding-top: 0.4em;
 }
 
-.summaryButtonsContainer > svg {
+.inlineFormButtonsContainer > svg {
     width: 18px;
     height: 18px;
+}
+
+.attendee-form-container {
+    display: flex;
+    width: 100%;
+    margin-bottom: -2px;
+    margin-top: -1px;
+}
+
+.attendee-form-container > input {
+    width: 100%;
+}
+
+.ical-attendee-selector-container{
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+}
+
+.ical-attendee-selector-label{
+    display: flex;
+}
+
+.attendeeLabel {
+    padding-top: 9px;
+}
+
+.inlineFormButtonsContainer .is-disabled {
+    color: var(--text-faint)
 }
