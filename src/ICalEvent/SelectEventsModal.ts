@@ -3,7 +3,7 @@ import ICal from "../../main"
 import ICalEvent from "./ICalEvent"
 import ChangeAttendeesModal from "./ChangeAttendeesModal"
 
-export default class ChooseSectionModal extends Modal {
+export default class SelectEventsModal extends Modal {
 
     plugin: ICal
     file: TFile

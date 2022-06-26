@@ -1,6 +1,7 @@
-import { Modal, DropdownComponent, ToggleComponent, TFile, ButtonComponent, TextComponent, ExtraButtonComponent } from "obsidian"
+import { Modal, TextComponent, ExtraButtonComponent } from "obsidian"
 import ICal from "../../main"
 import ICalEvent from "./ICalEvent"
+import PersonSuggestModal from "./personSuggestModal"
 
 export default class ChangeAttendeesModal extends Modal {
 
@@ -15,6 +16,19 @@ export default class ChangeAttendeesModal extends Modal {
         this.attendees = this.event.attendees.map(a => a)
     }
 
+    changeAttendeeAlias(container: HTMLElement, alias: string, initialAttendee: { name: string, alias: string }, formContainer: HTMLElement, attendeeContainerForm: HTMLElement) {
+        container.setText(`${alias}`)
+        this.event.attendees = this.event.attendees.map(_attendee => _attendee.name === initialAttendee.name ? { name: initialAttendee.name, alias: alias } : _attendee)
+        this.attendees = this.attendees.map(_attendee => _attendee.name === initialAttendee.name ? { name: initialAttendee.name, alias: alias } : _attendee)
+        if (this.plugin.settings.attendeesAliases.filter(a => a.name === initialAttendee.name).length === 0) {
+            this.plugin.settings.attendeesAliases.push({ name: initialAttendee.name, alias: alias })
+        } else {
+            this.plugin.settings.attendeesAliases = this.plugin.settings.attendeesAliases.map(a => a.name == initialAttendee.name ? { name: a.name, alias: alias } : a)
+        }
+        this.plugin.saveSettings()
+        formContainer.removeChild(attendeeContainerForm)
+    }
+
     buildAttendeeModifier(container: HTMLElement, formContainer: HTMLElement, attendeeName: string) {
         let attendee = this.attendees.filter(a => a.name === attendeeName)[0]
         const initialAttendee = attendee
@@ -27,6 +41,23 @@ export default class ChangeAttendeesModal extends Modal {
         attendeeInput.setValue(alias)
         attendeeInput.onChange(value => {
             alias = value
+        })
+
+        const attendeeInputSuggestorContainer = attendeeContainerForm.createDiv({
+            cls: "inlineFormButtonsContainer"
+        })
+        const attendeeInputSuggestor = new ExtraButtonComponent(attendeeInputSuggestorContainer)
+        attendeeInputSuggestor.setIcon("documents")
+        attendeeInputSuggestor.onClick(() => {
+            const personSuggestModal = new PersonSuggestModal(this.plugin, this.event)
+            personSuggestModal.open()
+            personSuggestModal.onClose = () => {
+                if (personSuggestModal.chosenPerson) {
+                    alias = personSuggestModal.chosenPerson
+                    attendeeInput.setValue(alias)
+                    this.changeAttendeeAlias(container, alias, initialAttendee, formContainer, attendeeContainerForm)
+                }
+            }
         })
 
         const attendeeInputValidateContainer = attendeeContainerForm.createDiv({

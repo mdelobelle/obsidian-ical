@@ -188,5 +188,18 @@ export default class ICalSettingsTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					})
 			});
+
+		/* Tag for filtering attendees files */
+		new Setting(containerEl)
+			.setName('Tag for filtering attendees files')
+			.setDesc('tag')
+			.addText((text) => {
+				text
+					.setValue(this.plugin.settings.searchTag)
+					.onChange(async (value) => {
+						this.plugin.settings.searchTag = value
+						await this.plugin.saveSettings();
+					})
+			});
 	}
 }

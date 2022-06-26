@@ -8,6 +8,7 @@ export interface ICalSettings {
 	iCalEventNotesFileNameTemplate: string
 	dailyNoteDateFormat: string
 	attendeesAliases: { name: string, alias: string }[]
+	searchTag: string
 }
 
 export const DEFAULT_SETTINGS: ICalSettings = {
@@ -19,5 +20,6 @@ export const DEFAULT_SETTINGS: ICalSettings = {
 	iCalEventNotesFolder: null,
 	iCalEventNotesFileNameTemplate: null,
 	dailyNoteDateFormat: "YYYY-MM-DD",
-	attendeesAliases: []
+	attendeesAliases: [],
+	searchTag: null
 }
