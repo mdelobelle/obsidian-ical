@@ -33,7 +33,6 @@ export default class ICalEvent {
 		recEndDate?: moment.Moment,
 	) {
 		this.event = event
-		console.log(this.event)
 		this.start = recStartDate !== undefined ? recStartDate : moment(event.start);
 		this.end = recEndDate !== undefined ? recEndDate : moment(event.end);
 		this.startDay = this.start.format("YYYYMMDD")
