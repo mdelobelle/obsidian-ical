@@ -60,6 +60,18 @@ export default class ICalSettingsTab extends PluginSettingTab {
 		let { containerEl } = this;
 		containerEl.empty();
 		containerEl.createEl('h2', { text: 'Settings for ICal' });
+		/* Calendar Folder for Ventura */
+		new Setting(containerEl)
+			.setName('Calendar db path')
+			.setDesc('Name and path of the calendar sqlite db')
+		const calendarDbContainer = containerEl.createDiv()
+		const path = new TextComponent(calendarDbContainer);
+		path.setValue(this.plugin.settings.calendarDbPath)
+		path.onChange(value => {
+			this.plugin.settings.calendarDbPath = value;
+			this.plugin.saveSettings();
+		})
+
 		/* Folder containing ics files */
 		new Setting(containerEl)
 			.setName('calendars')

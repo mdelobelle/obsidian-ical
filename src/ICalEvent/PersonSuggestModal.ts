@@ -1,13 +1,13 @@
 import { FuzzySuggestModal, TFile } from "obsidian"
 import ICal from "../../main"
-import ICalEvent from "./ICalEvent"
+import { Event } from "./Event"
 
 export default class PersonSuggestModal extends FuzzySuggestModal<TFile> {
 
     plugin: ICal
     chosenPerson: string = ""
 
-    constructor(plugin: ICal, event: ICalEvent) {
+    constructor(plugin: ICal) {
         super(plugin.app)
         this.plugin = plugin
     }

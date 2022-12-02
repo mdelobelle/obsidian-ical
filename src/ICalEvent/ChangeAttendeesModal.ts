@@ -1,24 +1,30 @@
 import { Modal, TextComponent, ExtraButtonComponent } from "obsidian"
 import ICal from "../../main"
-import ICalEvent from "./ICalEvent"
+import { Event } from "./Event"
 import PersonSuggestModal from "./personSuggestModal"
 
 export default class ChangeAttendeesModal extends Modal {
 
     plugin: ICal
-    event: ICalEvent
+    event: Event
     attendees: { name: string, alias: string }[]
 
-    constructor(plugin: ICal, event: ICalEvent) {
+    constructor(plugin: ICal, event: Event) {
         super(plugin.app)
         this.plugin = plugin
         this.event = event
-        this.attendees = this.event.attendees.map(a => a)
+        this.attendees = this.event.attendeesWithAlias
     }
 
-    changeAttendeeAlias(container: HTMLElement, alias: string, initialAttendee: { name: string, alias: string }, formContainer: HTMLElement, attendeeContainerForm: HTMLElement) {
+    changeAttendeeAlias(
+        container: HTMLElement,
+        alias: string,
+        initialAttendee: { name: string, alias: string },
+        formContainer: HTMLElement,
+        attendeeContainerForm: HTMLElement
+    ) {
         container.setText(`${alias}`)
-        this.event.attendees = this.event.attendees.map(_attendee => _attendee.name === initialAttendee.name ? { name: initialAttendee.name, alias: alias } : _attendee)
+        this.event.attendeesWithAlias = this.event.attendeesWithAlias.map(_attendee => _attendee.name === initialAttendee.name ? { name: initialAttendee.name, alias: alias } : _attendee)
         this.attendees = this.attendees.map(_attendee => _attendee.name === initialAttendee.name ? { name: initialAttendee.name, alias: alias } : _attendee)
         if (this.plugin.settings.attendeesAliases.filter(a => a.name === initialAttendee.name).length === 0) {
             this.plugin.settings.attendeesAliases.push({ name: initialAttendee.name, alias: alias })
@@ -49,7 +55,7 @@ export default class ChangeAttendeesModal extends Modal {
         const attendeeInputSuggestor = new ExtraButtonComponent(attendeeInputSuggestorContainer)
         attendeeInputSuggestor.setIcon("documents")
         attendeeInputSuggestor.onClick(() => {
-            const personSuggestModal = new PersonSuggestModal(this.plugin, this.event)
+            const personSuggestModal = new PersonSuggestModal(this.plugin)
             personSuggestModal.open()
             personSuggestModal.onClose = () => {
                 if (personSuggestModal.chosenPerson) {
@@ -67,7 +73,7 @@ export default class ChangeAttendeesModal extends Modal {
         attendeeInputValidate.setIcon("check")
         attendeeInputValidate.onClick(() => {
             container.setText(`${alias}`)
-            this.event.attendees = this.event.attendees.map(_attendee => _attendee.name === initialAttendee.name ? { name: initialAttendee.name, alias: alias } : _attendee)
+            this.event.attendeesWithAlias = this.event.attendeesWithAlias.map(_attendee => _attendee.name === initialAttendee.name ? { name: initialAttendee.name, alias: alias } : _attendee)
             this.attendees = this.attendees.map(_attendee => _attendee.name === initialAttendee.name ? { name: initialAttendee.name, alias: alias } : _attendee)
             if (this.plugin.settings.attendeesAliases.filter(a => a.name === initialAttendee.name).length === 0) {
                 this.plugin.settings.attendeesAliases.push({ name: initialAttendee.name, alias: alias })
@@ -87,7 +93,7 @@ export default class ChangeAttendeesModal extends Modal {
         attendeeInputReset.setDisabled(initialAttendee.name === initialAttendee.alias)
         attendeeInputReset.onClick(() => {
             container.setText(`${initialAttendee.name}`)
-            this.event.attendees = this.event.attendees.map(_attendee => _attendee.name === initialAttendee.name ? { name: initialAttendee.name, alias: initialAttendee.name } : _attendee)
+            this.event.attendeesWithAlias = this.event.attendeesWithAlias.map(_attendee => _attendee.name === initialAttendee.name ? { name: initialAttendee.name, alias: initialAttendee.name } : _attendee)
             this.attendees = this.attendees.map(_attendee => _attendee.name === initialAttendee.name ? { name: initialAttendee.name, alias: initialAttendee.name } : _attendee)
             this.plugin.settings.attendeesAliases = this.plugin.settings.attendeesAliases.filter(a => a.name !== initialAttendee.name)
             this.plugin.saveSettings()
@@ -127,3 +133,4 @@ export default class ChangeAttendeesModal extends Modal {
         }
     }
 }
+

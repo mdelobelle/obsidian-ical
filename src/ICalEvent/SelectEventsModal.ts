@@ -1,15 +1,15 @@
 import { Modal, DropdownComponent, ToggleComponent, TFile, ButtonComponent, TextComponent, ExtraButtonComponent } from "obsidian"
 import ICal from "../../main"
-import ICalEvent from "./ICalEvent"
+import { Event } from "./Event"
 import ChangeAttendeesModal from "./ChangeAttendeesModal"
 
 export default class SelectEventsModal extends Modal {
 
     plugin: ICal
     file: TFile
-    events: ICalEvent[]
-    selectedEventsForLine: ICalEvent[]
-    selectedEventsForNote: ICalEvent[]
+    events: Event[]
+    selectedEventsForLine: Event[]
+    selectedEventsForNote: Event[]
 
     lineNumber: number = -1
     fileDate: string
@@ -17,7 +17,7 @@ export default class SelectEventsModal extends Modal {
     bottomToggler: ToggleComponent
     selectSection: DropdownComponent
 
-    constructor(plugin: ICal, file: TFile, events: ICalEvent[], fileDate: string) {
+    constructor(plugin: ICal, file: TFile, events: Event[], fileDate: string) {
         super(plugin.app)
         this.file = file
         this.plugin = plugin
@@ -28,12 +28,12 @@ export default class SelectEventsModal extends Modal {
         this.insertAtBottom = false
     }
 
-    buildAttendeesModifier(event: ICalEvent) {
+    buildAttendeesModifier(event: Event) {
         const changeAttendeesModal = new ChangeAttendeesModal(this.plugin, event)
         changeAttendeesModal.open()
     }
 
-    buildSummaryModifier(summaryContainer: HTMLDivElement, formContainer: HTMLDivElement, event: ICalEvent) {
+    buildSummaryModifier(summaryContainer: HTMLDivElement, formContainer: HTMLDivElement, event: Event) {
         const initialSummary = event.summary
         const summaryContainerForm = formContainer.createDiv({
             cls: "summary-form-container"
@@ -64,7 +64,7 @@ export default class SelectEventsModal extends Modal {
         })
     }
 
-    buildEventToggler(valueGrid: HTMLDivElement, event: ICalEvent) {
+    buildEventToggler(valueGrid: HTMLDivElement, event: Event) {
         const eventSelectorContainer = valueGrid.createDiv({
             cls: "ical-event-selector-container"
         })
@@ -92,8 +92,8 @@ export default class SelectEventsModal extends Modal {
         const eventLabelCalendarName = eventLabelContainer.createDiv({
             cls: "eventLabelCalendarName"
         })
-        eventLabelCalendarName.setAttr("style", `background-color: var(--chart-color-${event.calendarId % 8 + 1})`)
-        eventLabelCalendarName.setText(event.calendarName)
+        eventLabelCalendarName.setAttr("style", `background-color: var(--chart-color-1})`)
+        eventLabelCalendarName.setText("Calendrier")
         const eventLabel = eventLabelContainer.createDiv({
             cls: "eventLabelSummary"
         })

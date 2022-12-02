@@ -1,5 +1,6 @@
 export interface ICalSettings {
 	icsCalendars: { name: string, path: string }[];
+	calendarDbPath: string;
 	iCalEventLineTemplatePath: string
 	iCalEventNoteTemplatePath: string
 	dateFormat: string
@@ -13,6 +14,7 @@ export interface ICalSettings {
 
 export const DEFAULT_SETTINGS: ICalSettings = {
 	icsCalendars: [],
+	calendarDbPath: null,
 	iCalEventLineTemplatePath: null,
 	iCalEventNoteTemplatePath: null,
 	dateFormat: "ddd DD/MM",
