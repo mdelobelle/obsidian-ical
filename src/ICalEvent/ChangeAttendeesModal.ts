@@ -23,16 +23,19 @@ export default class ChangeAttendeesModal extends Modal {
         formContainer: HTMLElement,
         attendeeContainerForm: HTMLElement
     ) {
+        const settings = this.plugin.settings
         container.setText(`${alias}`)
-        this.event.attendeesWithAlias = this.event.attendeesWithAlias.map(_attendee => _attendee.name === initialAttendee.name ? { name: initialAttendee.name, alias: alias } : _attendee)
-        this.attendees = this.attendees.map(_attendee => _attendee.name === initialAttendee.name ? { name: initialAttendee.name, alias: alias } : _attendee)
-        if (this.plugin.settings.attendeesAliases.filter(a => a.name === initialAttendee.name).length === 0) {
-            this.plugin.settings.attendeesAliases.push({ name: initialAttendee.name, alias: alias })
+        this.event.attendeesWithAlias = this.event.attendeesWithAlias.map(a => a.name === initialAttendee.name ? { name: initialAttendee.name, alias: alias } : a)
+        console.log(this.event)
+        this.attendees = this.attendees.map(a => a.name === initialAttendee.name ? { name: initialAttendee.name, alias: alias } : a)
+        if (settings.attendeesAliases.filter(a => a.name === initialAttendee.name).length === 0) {
+            settings.attendeesAliases.push({ name: initialAttendee.name, alias: alias })
         } else {
-            this.plugin.settings.attendeesAliases = this.plugin.settings.attendeesAliases.map(a => a.name == initialAttendee.name ? { name: a.name, alias: alias } : a)
+            settings.attendeesAliases = settings.attendeesAliases.map(a => a.name == initialAttendee.name ? { name: a.name, alias: alias } : a)
         }
         this.plugin.saveSettings()
         formContainer.removeChild(attendeeContainerForm)
+        this.event.renderEventNote()
     }
 
     buildAttendeeModifier(container: HTMLElement, formContainer: HTMLElement, attendeeName: string) {
@@ -72,16 +75,7 @@ export default class ChangeAttendeesModal extends Modal {
         const attendeeInputValidate = new ExtraButtonComponent(attendeeInputValidateContainer)
         attendeeInputValidate.setIcon("check")
         attendeeInputValidate.onClick(() => {
-            container.setText(`${alias}`)
-            this.event.attendeesWithAlias = this.event.attendeesWithAlias.map(_attendee => _attendee.name === initialAttendee.name ? { name: initialAttendee.name, alias: alias } : _attendee)
-            this.attendees = this.attendees.map(_attendee => _attendee.name === initialAttendee.name ? { name: initialAttendee.name, alias: alias } : _attendee)
-            if (this.plugin.settings.attendeesAliases.filter(a => a.name === initialAttendee.name).length === 0) {
-                this.plugin.settings.attendeesAliases.push({ name: initialAttendee.name, alias: alias })
-            } else {
-                this.plugin.settings.attendeesAliases = this.plugin.settings.attendeesAliases.map(a => a.name == initialAttendee.name ? { name: a.name, alias: alias } : a)
-            }
-            this.plugin.saveSettings()
-            formContainer.removeChild(attendeeContainerForm)
+            this.changeAttendeeAlias(container, alias, initialAttendee, formContainer, attendeeContainerForm)
         })
         const attendeeInputResetContainer = attendeeContainerForm.createDiv({
             cls: "inlineFormButtonsContainer"
@@ -92,12 +86,7 @@ export default class ChangeAttendeesModal extends Modal {
         if (initialAttendee.name !== initialAttendee.alias) { attendeeInputReset.setTooltip(`${initialAttendee.alias} -> ${initialAttendee.name}`) }
         attendeeInputReset.setDisabled(initialAttendee.name === initialAttendee.alias)
         attendeeInputReset.onClick(() => {
-            container.setText(`${initialAttendee.name}`)
-            this.event.attendeesWithAlias = this.event.attendeesWithAlias.map(_attendee => _attendee.name === initialAttendee.name ? { name: initialAttendee.name, alias: initialAttendee.name } : _attendee)
-            this.attendees = this.attendees.map(_attendee => _attendee.name === initialAttendee.name ? { name: initialAttendee.name, alias: initialAttendee.name } : _attendee)
-            this.plugin.settings.attendeesAliases = this.plugin.settings.attendeesAliases.filter(a => a.name !== initialAttendee.name)
-            this.plugin.saveSettings()
-            formContainer.removeChild(attendeeContainerForm)
+            this.changeAttendeeAlias(container, initialAttendee.name, initialAttendee, formContainer, attendeeContainerForm)
         })
 
         const attendeeInputCancelContainer = attendeeContainerForm.createDiv({

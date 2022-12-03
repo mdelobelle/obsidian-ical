@@ -1,19 +1,25 @@
 import ICal from '../../main'
 import { moment } from 'obsidian'
 
+interface Participant {
+    name: string;
+    alias: string
+}
+
 interface IEvent {
     eventId: number;
     status: number;
     summary: string;
     unixStart: number; // unix time from Jan 01 2001
     unixEnd: number; // unix time from Jan 01 2001
-    organizer: string;
-    attendees: string[];
+    attendeesWithAlias: Participant[]
+    organizerWithAlias: Participant
 }
 
 export class Event implements IEvent {
 
-    public attendeesWithAlias: { name: string, alias: string }[] = [];
+    public attendeesWithAlias: Participant[] = [];
+    public organizerWithAlias: Participant
     public shortEvent: string
     public start: moment.Moment
     public end: moment.Moment
@@ -30,14 +36,16 @@ export class Event implements IEvent {
         public summary: string,
         public unixStart: number, // unix time from Jan 01 2001
         public unixEnd: number, // unix time from Jan 01 2001
-        public organizer: string,
-        public attendees: string[],
+        organizer: string,
+        attendees: string[],
     ) {
         const attendeesAliases = this.plugin.settings.attendeesAliases
-        this.attendees.forEach(attendee => {
+        attendees.forEach(attendee => {
             const attendeeWithAlias = attendeesAliases.find(a => a.name === attendee)
             this.attendeesWithAlias.push({ name: attendee, alias: attendeeWithAlias?.alias || attendee })
         })
+        const organizerAlias = attendeesAliases.find(a => a.name === organizer)
+        this.organizerWithAlias = { name: organizer, alias: organizerAlias?.alias || organizer }
         this.dateFormat = this.plugin.settings.dateFormat
         this.timeFormat = this.plugin.settings.timeFormat
         this.start = moment(unixStart * 1000).add(31, 'y')
@@ -58,7 +66,7 @@ export class Event implements IEvent {
             template = template.replace(/{{start}}/g, this.eventStart())
             template = template.replace(/{{end}}/g, this.eventEnd())
             template = template.replace(/{{summary}}/g, `${this.summary.replace(/[:/]/g, "-")}`)
-            template = template.replace(/{{organizer}}/g, `${this.organizer || ""}`)
+            template = template.replace(/{{organizer}}/g, `${this.organizerWithAlias.alias || ""}`)
         } else {
             template = String(`${this.start.format(this.dateFormat)} - ${this.start.format(this.timeFormat)} - ${this.summary.replace(/[:/]/g, "-")}`)
         }
@@ -75,8 +83,8 @@ export class Event implements IEvent {
         template = template.replace(/{{start}}/g, this.eventStart())
         template = template.replace(/{{end}}/g, this.eventEnd())
         template = template.replace(/{{summary}}/g, `${this.summary.replace(/[:/]/g, "-")}`)
-        template = template.replace(/{{organizer}}/g, `${this.organizer || ""}`)
-        template = template.replace(/{{organizer.link}}/g, `${this.organizer ? `[[${this.organizer}]]` : ""}`)
+        template = template.replace(/{{organizer}}/g, `${this.organizerWithAlias.alias || ""}`)
+        template = template.replace(/{{organizer.link}}/g, `${this.organizerWithAlias.alias ? `[[${this.organizerWithAlias.alias}]]` : ""}`)
         template = template.replace(/{{attendees.inline}}/g, this.attendeesWithAlias.map(a => a.alias).join(", "))
         template = template.replace(/{{attendees.list}}/g, this.attendeesWithAlias.map(a => `- ${a.alias}`).join('\n'))
         template = template.replace(/{{attendees.link.inline}}/g, this.attendeesWithAlias.map(a => `[[${a.alias}]]`).join(", "))
