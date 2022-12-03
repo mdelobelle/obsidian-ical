@@ -26,7 +26,6 @@ export default class ChangeAttendeesModal extends Modal {
         const settings = this.plugin.settings
         container.setText(`${alias}`)
         this.event.attendeesWithAlias = this.event.attendeesWithAlias.map(a => a.name === initialAttendee.name ? { name: initialAttendee.name, alias: alias } : a)
-        console.log(this.event)
         this.attendees = this.attendees.map(a => a.name === initialAttendee.name ? { name: initialAttendee.name, alias: alias } : a)
         if (settings.attendeesAliases.filter(a => a.name === initialAttendee.name).length === 0) {
             settings.attendeesAliases.push({ name: initialAttendee.name, alias: alias })
