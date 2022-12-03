@@ -4,7 +4,6 @@ import ICalSettingsTab from "./src/settings/ICalSettingsTab"
 import { Event } from './src/ICalEvent/Event'
 import SelectEventsModal from "./src/ICalEvent/SelectEventsModal"
 import moment from 'moment'
-import { Knex, knex } from 'knex';
 
 export default class ICal extends Plugin {
 	settings: ICalSettings;

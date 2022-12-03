@@ -13,7 +13,7 @@ export default class SelectEventsModal extends Modal {
 
     lineNumber: number = -1
     fileDate: string
-    insertAtBottom: boolean
+    insertAtBottom: boolean = true
     bottomToggler: ToggleComponent
     selectSection: DropdownComponent
 

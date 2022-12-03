@@ -1,6 +1,5 @@
 import { FuzzySuggestModal, TFile } from "obsidian"
 import ICal from "../../main"
-import { Event } from "./Event"
 
 export default class PersonSuggestModal extends FuzzySuggestModal<TFile> {
 

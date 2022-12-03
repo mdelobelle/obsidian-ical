@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting, TextComponent, ButtonComponent } from "obsidian"
+import { App, PluginSettingTab, Setting, TextComponent } from "obsidian"
 import ICal from "../../main"
 
 
@@ -8,52 +8,6 @@ export default class ICalSettingsTab extends PluginSettingTab {
 	constructor(app: App, plugin: ICal) {
 		super(app, plugin)
 		this.plugin = plugin
-	}
-
-	createTitle = (container: HTMLElement, calendar: { name: string, path: string }): HTMLSpanElement => {
-		const calendarTitleContainer = container.createDiv({
-			cls: "calendarTitleContainer"
-		})
-		const title = calendarTitleContainer.createEl('span', { text: calendar.name, cls: "calendarTitle" })
-		const calendarTitleRemoveButton = new ButtonComponent(calendarTitleContainer)
-		calendarTitleRemoveButton.setIcon("trash")
-		calendarTitleRemoveButton.setClass("calendarRemoveButton")
-		calendarTitleRemoveButton.onClick(e => {
-			this.plugin.settings.icsCalendars.remove(calendar)
-			this.plugin.saveSettings()
-			container.remove()
-		})
-		return title
-	}
-
-
-	createPathInput = (container: HTMLElement, calendar: { name: string, path: string }): void => {
-		const calendarPathContainer = container.createDiv({
-			cls: "calendarInput large"
-		})
-		calendarPathContainer.createEl('span', { text: "Path", cls: "calendarInputLabel" })
-		const calendarPath = new TextComponent(calendarPathContainer)
-		calendarPath.setValue(calendar.path)
-		calendarPath.setPlaceholder('Path/to/.icsFolder/')
-		calendarPath.onChange(value => {
-			this.plugin.settings.icsCalendars.map(c => { if (c.name == calendar.name) { c.path = value } })
-			this.plugin.saveSettings()
-		})
-	}
-
-	createNameInput = (container: HTMLElement, calendar: { name: string, path: string }, title: HTMLSpanElement): void => {
-		const calendarNameContainer = container.createDiv({
-			cls: "calendarInput"
-		})
-		calendarNameContainer.createEl('span', { text: "Name", cls: "calendarInputLabel" })
-		const calendarName = new TextComponent(calendarNameContainer)
-		calendarName.setValue(calendar.name)
-		calendarName.setPlaceholder('Name')
-		calendarName.onChange(value => {
-			this.plugin.settings.icsCalendars.map(c => { if (c.name == calendar.name) { c.name = value } })
-			title.textContent = value
-			this.plugin.saveSettings()
-		})
 	}
 
 	display() {
@@ -71,39 +25,6 @@ export default class ICalSettingsTab extends PluginSettingTab {
 			this.plugin.settings.calendarDbPath = value;
 			this.plugin.saveSettings();
 		})
-
-		/* Folder containing ics files */
-		new Setting(containerEl)
-			.setName('calendars')
-			.setDesc('Name and path of the calendars you want to look into')
-		const calendarsContainer = containerEl.createDiv()
-		this.plugin.settings.icsCalendars.forEach((calendar: { name: string, path: string }, i: number) => {
-			const calendarContainer = calendarsContainer.createDiv()
-			const title = this.createTitle(calendarContainer, calendar)
-			this.createPathInput(calendarContainer, calendar)
-			this.createNameInput(calendarContainer, calendar, title)
-		})
-		const addNewCalendarContainer = containerEl.createDiv({
-			cls: "addNewCalendarContainer"
-		})
-		addNewCalendarContainer.createDiv({
-			cls: "addNewCalendarContainerSpacer"
-		})
-
-		const addNewCalendarButton = new ButtonComponent(addNewCalendarContainer)
-		addNewCalendarButton.setButtonText("+")
-		addNewCalendarButton.setTooltip("Add a new calendar")
-		addNewCalendarButton.onClick(e => {
-			e.preventDefault();
-			const newCalendar = { name: `calendar_${this.plugin.settings.icsCalendars.length + 1}`, path: "" }
-			this.plugin.settings.icsCalendars.push(newCalendar)
-			const calendarContainer = calendarsContainer.createDiv()
-			const newTitle = this.createTitle(calendarContainer, newCalendar)
-			this.createPathInput(calendarContainer, newCalendar)
-			this.createNameInput(calendarContainer, newCalendar, newTitle)
-			this.plugin.saveSettings()
-		})
-
 
 		/*Daily note date format*/
 		new Setting(containerEl)
