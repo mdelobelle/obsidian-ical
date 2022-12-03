@@ -10,6 +10,10 @@ You can
 
 **Heads up** : this only works with daily notes, you'll have to have the core plugin "daily note" or the community plugin "periodic notes" to be enabled
 
+### Installation
+
+You'll have to install https://github.com/windily-cloud/obsidian-sqlite3 (follow their readme carrefully)
+
 ### Settings
 
 You have to define:
