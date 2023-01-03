@@ -25,7 +25,7 @@ export default class SelectEventsModal extends Modal {
         this.selectedEventsForLine = []
         this.selectedEventsForNote = []
         this.fileDate = fileDate
-        this.insertAtBottom = false
+        this.insertAtBottom = true
     }
 
     buildAttendeesModifier(event: Event) {

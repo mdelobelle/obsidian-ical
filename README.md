@@ -10,14 +10,19 @@ You can
 
 **Heads up** : this only works with daily notes, you'll have to have the core plugin "daily note" or the community plugin "periodic notes" to be enabled
 
-### Installation
+### Installation (for MacOS Ventura)
 
-You'll have to install https://github.com/windily-cloud/obsidian-sqlite3 (follow their readme carrefully)
+A light python webserver is necessary to connect to the Calendar.sqlitedb from obsidian.
+From your terminal: navigate to YourVault/.obsidian/plugins/obsidian-ical/sqlite
+and run `$ python3 sqliteWebServer.py`
+
+By default this server's root url is `http://localhost:8080`. If you wan't to change it, you'll have to change it in sqlite/sqliteWebServer.py and in the plugin's settings
 
 ### Settings
 
 You have to define:
-- **.ics files folder** : the path to the folder containing the ics file you want to screen
+- **sqlite database** : the absolute path to the Calendar.sqlitedb file on your system
+- **Sqlite API root URL** : the root url of the API server to access the sqlite db (see Installation section)
 - **daily note format** : the format of the title of your daily note
 - **Event line template** : the template file used to display le line for the selected event(s) in the daily note
 - **Event note template** : the template file used to create a new note for the selected event(s)
@@ -51,7 +56,3 @@ In the template file you can use the following variables to create your very spe
 - {{attendees.link.inline}} : indented list of attendees as obsidian link (`[[my fellow colleague Jim]]`), minus the organizer
 - {{organizer}}: the organizer of the meeting
 - {{organizer.link}}: the organizer of the meeting as obsidian link (`[[the big boss]]`)
-
-### Roadmap
-
-- [ ] manage events from several calendars

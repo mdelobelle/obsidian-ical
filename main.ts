@@ -1,4 +1,4 @@
-import { Plugin, TFile, MarkdownView, Notice } from 'obsidian';
+import { Plugin, TFile, MarkdownView, Notice, RequestUrlParam, requestUrl } from 'obsidian';
 import { ICalSettings, DEFAULT_SETTINGS } from "./src/settings/ICalSettings"
 import ICalSettingsTab from "./src/settings/ICalSettingsTab"
 import { Event } from './src/ICalEvent/Event'
@@ -17,7 +17,7 @@ export default class ICal extends Plugin {
 			try {
 				const templateFile = this.app.vault.getAbstractFileByPath(eventLineTemplatePath)
 				if (templateFile instanceof TFile) {
-					this.eventLineTemplate = await this.app.vault.cachedRead(templateFile)
+					this.eventLineTemplate = await this.app.vault.read(templateFile)
 				}
 			} catch (error) { }
 		}
@@ -28,55 +28,56 @@ export default class ICal extends Plugin {
 			try {
 				const templateFile = this.app.vault.getAbstractFileByPath(eventNoteTemplatePath)
 				if (templateFile instanceof TFile) {
-					this.eventNoteTemplate = await this.app.vault.cachedRead(templateFile)
+					this.eventNoteTemplate = await this.app.vault.read(templateFile)
 				}
 			} catch (error) { }
 		}
 	}
 
-	openDb(): void {
-		//@ts-ignore
-		this.db = this.app.plugins.plugins["obsidian-sqlite3"].initDatabase(this.settings.calendarDbPath)
-	}
-
-	getParticipantsForItem(calendarItemId: number) {
-		const participantsQuery = `
-			SELECT 
-				display_name as name, role
-			FROM
-				Participant, 
-				Identity	
-			WHERE
-				Identity.ROWID =  Participant.identity_id
-				AND
-				Participant.owner_id = ${calendarItemId}
-		`
-		const participants = this.db.prepare(participantsQuery).all()
+	async getParticipantsForItem(calendarItemId: number) {
+		const params: RequestUrlParam = {
+			url: `${this.settings.apiUrl}/attendees`,
+			method: "GET",
+			//contentType: "application/json",
+			body: JSON.stringify({
+				databasePath: this.settings.calendarDbPath,
+				calendarItemId: calendarItemId
+			})
+		}
+		let participants = []
+		try {
+			participants = (await requestUrl(params)).json
+		} catch (error) {
+			console.log(error)
+			new Notice("Error in connecting to the Calendar.sqlitedb", 5000)
+		}
 		return participants;
 	}
 
-	getEventsWithDate(date: string) {
-		const unixDate = moment(date).unix()
-		const calendarItemsQuery = `
-			SELECT 
-				CalendarItem.ROWID as eventId, invitation_status as status, summary, occurrence_date as 'unixStart', occurrence_end_date as 'unixEnd'
-			FROM
-				OccurrenceCache
-					LEFT JOIN 
-					CalendarItem
-					ON
-					OccurrenceCache.event_id = CalendarItem.ROWID
 
-			WHERE 
-				${unixDate} >= day + 978303600
-				AND
-				${unixDate} <= day + 978390000
-			ORDER BY
-				unixStart ASC ;
-		`
-		const calendarItems = this.db.prepare(calendarItemsQuery).all()
-		const events = calendarItems.map((item: any) => {
-			const participants = this.getParticipantsForItem(item.eventId);
+	async getEventsWithDate(date: string): Promise<any[]> {
+		const unixDate = moment(date).unix()
+		// call the GET request
+		const params: RequestUrlParam = {
+			url: `${this.settings.apiUrl}/fetchEvents`,
+			method: "GET",
+			//contentType: "application/json",
+			body: JSON.stringify({
+				databasePath: this.settings.calendarDbPath,
+				unixDate: unixDate
+			})
+		}
+		let calendarItems = []
+		try {
+			calendarItems = (await requestUrl(params)).json
+
+		} catch (error) {
+			console.log(error)
+			new Notice("Error in connecting to the Calendar.sqlitedb", 5000)
+		}
+
+		const events = Promise.all(calendarItems.map(async (item: any) => {
+			const participants: any[] = await this.getParticipantsForItem(item.eventId);
 			const organizer = participants.find((p: any) => p.role === 0)?.name
 			const attendees = participants.filter((p: any) => p.role !== 0).map((p: any) => p.name)
 			return new Event(
@@ -90,7 +91,7 @@ export default class ICal extends Plugin {
 				organizer,
 				attendees
 			)
-		})
+		}));
 		return events;
 	}
 
@@ -112,15 +113,13 @@ export default class ICal extends Plugin {
 			],
 			callback: async () => {
 
-				this.openDb();
 				const activeView = this.app.workspace.getActiveViewOfType(MarkdownView)
 				if (activeView) {
 					const _fileDate = moment(activeView.file.basename, this.settings.dailyNoteDateFormat)
 					if (_fileDate.isValid()) {
 						const fileDate = _fileDate.format("YYYY-MM-DD")
 						const fs = require('fs');
-						this.openDb()
-						const events = this.getEventsWithDate(fileDate)
+						const events = await this.getEventsWithDate(fileDate)
 						new SelectEventsModal(this, activeView.file, events, fileDate).open()
 					} else {
 						new Notice('iCal - you are not in a daily note')

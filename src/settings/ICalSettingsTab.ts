@@ -18,13 +18,27 @@ export default class ICalSettingsTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName('Calendar db path')
 			.setDesc('Name and path of the calendar sqlite db')
-		const calendarDbContainer = containerEl.createDiv()
-		const path = new TextComponent(calendarDbContainer);
-		path.setValue(this.plugin.settings.calendarDbPath)
-		path.onChange(value => {
-			this.plugin.settings.calendarDbPath = value;
-			this.plugin.saveSettings();
-		})
+			.addText((text) => {
+				text
+					.setValue(this.plugin.settings.calendarDbPath)
+					.onChange(async value => {
+						this.plugin.settings.calendarDbPath = value;
+						await this.plugin.saveSettings();
+					})
+			})
+
+		new Setting(containerEl)
+			.setName('Sqlite API root URL')
+			.setDesc('hosturl and port to connect to the backend')
+			.addText((text) => {
+				text
+					.setPlaceholder("http://localhost:8080")
+					.setValue(this.plugin.settings.apiUrl)
+					.onChange(async value => {
+						this.plugin.settings.apiUrl = value;
+						await this.plugin.saveSettings();
+					})
+			})
 
 		/*Daily note date format*/
 		new Setting(containerEl)
