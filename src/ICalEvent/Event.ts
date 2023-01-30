@@ -55,7 +55,7 @@ export class Event implements IEvent {
         this.renderEventNote()
     }
 
-    createNote = () => {
+    createNote = async () => {
         const folder = this.plugin.settings.iCalEventNotesFolder
         let template = this.plugin.settings.iCalEventNotesFileNameTemplate
         if (template) {
@@ -71,7 +71,7 @@ export class Event implements IEvent {
             template = String(`${this.start.format(this.dateFormat)} - ${this.start.format(this.timeFormat)} - ${this.summary.replace(/[:/]/g, "-")}`)
         }
         const filename = template.replace(/[:/]/g, "-")
-        this.plugin.app.vault.create(folder + filename + ".md", this.eventNote)
+        await this.plugin.app.vault.create(folder + filename + ".md", this.eventNote)
     }
 
     renderTemplate(_template: string) {

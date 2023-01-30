@@ -200,7 +200,7 @@ export default class SelectEventsModal extends Modal {
                 this.insertAtBottom = false
                 this.bottomToggler.setValue(false)
             })
-            saveButton.onClick(() => {
+            saveButton.onClick(async () => {
                 if (this.insertAtBottom) {
                     this.app.vault.modify(this.file, result + '\n' + this.selectedEventsForLine.map(event => event.eventLine).join('\n'))
                 } else {
@@ -215,7 +215,7 @@ export default class SelectEventsModal extends Modal {
                         this.app.vault.modify(this.file, newContent.join('\n'))
                     }
                 }
-                this.selectedEventsForNote.map(event => event.createNote())
+                this.selectedEventsForNote.map(async event => await event.createNote())
 
                 this.close()
             })
