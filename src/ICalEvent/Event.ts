@@ -48,12 +48,13 @@ export class Event implements IEvent {
         this.organizerWithAlias = { name: organizer, alias: organizerAlias?.alias || organizer }
         this.dateFormat = this.plugin.settings.dateFormat
         this.timeFormat = this.plugin.settings.timeFormat
-        this.start = moment(unixStart * 1000).add(31, 'y')
-        this.end = moment(unixEnd * 1000).add(31, 'y')
+        this.start = moment((unixStart + 3600) * 1000).add(11323, 'd') // origin of time seems to be 1/1/1992 in calendar
+        this.end = moment((unixEnd + 3600) * 1000).add(11323, 'd')
         this.renderShortEvent(35)
         this.renderEventLine()
         this.renderEventNote()
     }
+
 
     createNote = async () => {
         const folder = this.plugin.settings.iCalEventNotesFolder
@@ -65,12 +66,12 @@ export class Event implements IEvent {
             template = template.replace(/{{endtime}}/g, this.end.format(this.plugin.settings.timeFormat))
             template = template.replace(/{{start}}/g, this.eventStart())
             template = template.replace(/{{end}}/g, this.eventEnd())
-            template = template.replace(/{{summary}}/g, `${this.summary.replace(/[:/]/g, "-")}`)
+            template = template.replace(/{{summary}}/g, `${this.summary.replace(/[:/|]/g, "-").trim()}`)
             template = template.replace(/{{organizer}}/g, `${this.organizerWithAlias.alias || ""}`)
         } else {
-            template = String(`${this.start.format(this.dateFormat)} - ${this.start.format(this.timeFormat)} - ${this.summary.replace(/[:/]/g, "-")}`)
+            template = String(`${this.start.format(this.dateFormat)} - ${this.start.format(this.timeFormat)} - ${this.summary.replace(/[:/]/g, "-").trim()}`)
         }
-        const filename = template.replace(/[:/]/g, "-")
+        const filename = template.replace(/[:/]/g, "-").trim()
         await this.plugin.app.vault.create(folder + filename + ".md", this.eventNote)
     }
 
@@ -82,7 +83,7 @@ export class Event implements IEvent {
         template = template.replace(/{{endtime}}/g, this.end.format(this.plugin.settings.timeFormat))
         template = template.replace(/{{start}}/g, this.eventStart())
         template = template.replace(/{{end}}/g, this.eventEnd())
-        template = template.replace(/{{summary}}/g, `${this.summary.replace(/[:/]/g, "-")}`)
+        template = template.replace(/{{summary}}/g, `${this.summary.replace(/[:/|]/g, "-").trim()}`)
         template = template.replace(/{{organizer}}/g, `${this.organizerWithAlias.alias || ""}`)
         template = template.replace(/{{organizer.link}}/g, `${this.organizerWithAlias.alias ? `[[${this.organizerWithAlias.alias}]]` : ""}`)
         template = template.replace(/{{attendees.inline}}/g, this.attendeesWithAlias.map(a => a.alias).join(", "))

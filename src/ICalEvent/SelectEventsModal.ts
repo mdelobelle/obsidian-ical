@@ -1,4 +1,4 @@
-import { Modal, DropdownComponent, ToggleComponent, TFile, ButtonComponent, TextComponent, ExtraButtonComponent } from "obsidian"
+import { Modal, DropdownComponent, ToggleComponent, TFile, ButtonComponent, TextComponent, ExtraButtonComponent, MarkdownEditView, MarkdownView } from "obsidian"
 import ICal from "../../main"
 import { Event } from "./Event"
 import ChangeAttendeesModal from "./ChangeAttendeesModal"
@@ -13,7 +13,6 @@ export default class SelectEventsModal extends Modal {
 
     lineNumber: number = -1
     fileDate: string
-    insertAtBottom: boolean = true
     bottomToggler: ToggleComponent
     selectSection: DropdownComponent
 
@@ -25,7 +24,6 @@ export default class SelectEventsModal extends Modal {
         this.selectedEventsForLine = []
         this.selectedEventsForNote = []
         this.fileDate = fileDate
-        this.insertAtBottom = true
     }
 
     buildAttendeesModifier(event: Event) {
@@ -49,6 +47,8 @@ export default class SelectEventsModal extends Modal {
         const summaryInputValidate = new ExtraButtonComponent(summaryInputValidateContainer)
         summaryInputValidate.setIcon("check")
         summaryInputValidate.onClick(() => {
+            event.renderShortEvent(35);
+            event.renderEventLine();
             summaryContainer.setText(`${event.shortEvent}`)
             formContainer.removeChild(summaryContainerForm)
         })
@@ -153,25 +153,6 @@ export default class SelectEventsModal extends Modal {
         this.events.forEach(event => this.buildEventToggler(eventSelectContainer, event))
     }
 
-    buildBottomSelector(container: HTMLElement) {
-        const bottomTogglerContainer = container.createDiv({
-            cls: "ical-bottom-selector-toggler"
-        })
-        this.bottomToggler = new ToggleComponent(bottomTogglerContainer)
-        this.bottomToggler.setValue(this.insertAtBottom)
-        this.bottomToggler.onChange(value => {
-            this.insertAtBottom = value
-            if (value) {
-                this.lineNumber = -1
-                this.selectSection.setValue("")
-            }
-        })
-        const bottomLabel = container.createDiv({
-            cls: "ical-bottom-selector-label"
-        })
-        bottomLabel.setText(`Insert at bottom`)
-    }
-
     buildSectionSelector(container: HTMLElement) {
         const sectionSelectContainer = container.createDiv({
             cls: "ical-section-selection-container"
@@ -179,53 +160,62 @@ export default class SelectEventsModal extends Modal {
         this.selectSection = new DropdownComponent(sectionSelectContainer)
         this.selectSection.addOption("", "Insert selected events after...")
         this.selectSection.addOption("top_-1", "-- Insert at the top --")
-        this.buildBottomSelector(sectionSelectContainer)
     }
 
-    buildFooter(container: HTMLElement) {
+    async insertEvent(content: string) {
+        if (this.lineNumber == -1) {
+            this.app.vault.modify(this.file, this.selectedEventsForLine.map(event => event.eventLine).join('\n') + '\n' + content)
+        } else {
+            let newContent: string[] = []
+            content.split('\n').forEach((_line, _lineNumber) => {
+                newContent.push(_line)
+                if (_lineNumber == this.lineNumber) { newContent.push(this.selectedEventsForLine.map(event => event.eventLine).join('\n')) }
+            })
+            this.app.vault.modify(this.file, newContent.join('\n'))
+        }
+        this.selectedEventsForNote.map(async event => await event.createNote())
+        this.close()
+    }
+
+    async buildFooter(container: HTMLElement) {
         const footer = container.createDiv({
             cls: "ical-events-grid-footer"
         })
+        const content = await this.app.vault.read(this.file);
+        const addAtSection = new ButtonComponent(footer)
+        addAtSection.setIcon("text-cursor-input")
+        addAtSection.onClick(async () => {
+            const view = this.plugin.app.workspace.getActiveViewOfType(MarkdownView);
+            this.lineNumber = view.editor.getCursor().line
+            await this.insertEvent(content);
+
+        })
+
+
         const saveButton = new ButtonComponent(footer)
         saveButton.setIcon("checkmark")
 
-        this.app.vault.read(this.file).then(result => {
-            const linesCount = result.split("\n").length
-            result.split("\n").forEach((line, lineNumber) => {
-                this.selectSection.addOption(`body_${lineNumber}`, `${line.substring(0, 37)}${line.length > 34 ? "..." : ""}`)
-            })
-            this.selectSection.onChange(() => {
-                const valueArray = this.selectSection.getValue().match(/(\w+)_(-?\d+)/)
-                this.lineNumber = Number(valueArray[2])
-                this.insertAtBottom = false
-                this.bottomToggler.setValue(false)
-            })
-            saveButton.onClick(async () => {
-                if (this.insertAtBottom) {
-                    this.app.vault.modify(this.file, result + '\n' + this.selectedEventsForLine.map(event => event.eventLine).join('\n'))
-                } else {
-                    if (this.lineNumber == -1) {
-                        this.app.vault.modify(this.file, this.selectedEventsForLine.map(event => event.eventLine).join('\n') + '\n' + result)
-                    } else {
-                        let newContent: string[] = []
-                        result.split('\n').forEach((_line, _lineNumber) => {
-                            newContent.push(_line)
-                            if (_lineNumber == this.lineNumber) { newContent.push(this.selectedEventsForLine.map(event => event.eventLine).join('\n')) }
-                        })
-                        this.app.vault.modify(this.file, newContent.join('\n'))
-                    }
-                }
-                this.selectedEventsForNote.map(async event => await event.createNote())
 
-                this.close()
-            })
+        let lines = 0;
+        content.split("\n").forEach((line, lineNumber) => {
+            this.selectSection.addOption(`body_${lineNumber}`, `${line.substring(0, 37)}${line.length > 34 ? "..." : ""}`)
+            line += 1;
+        })
+        this.selectSection.setValue(`body_${lines}`)
+        this.selectSection.onChange(() => {
+            const valueArray = this.selectSection.getValue().match(/(\w+)_(-?\d+)/)
+            this.lineNumber = Number(valueArray[2])
+        })
+
+        saveButton.onClick(async () => {
+            this.insertEvent(content);
         })
     }
 
-    onOpen() {
+    async onOpen() {
         this.titleEl.setText("Select events to include")
         this.buildEventSelector(this.contentEl)
         this.buildSectionSelector(this.contentEl)
-        this.buildFooter(this.contentEl)
+        await this.buildFooter(this.contentEl)
     }
 }

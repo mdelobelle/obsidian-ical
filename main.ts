@@ -11,6 +11,7 @@ export default class ICal extends Plugin {
 	eventLineTemplate: string = ""
 	eventNoteTemplate: string = ""
 
+
 	async getEventLineTemplate(): Promise<void> {
 		const eventLineTemplatePath = this.settings.iCalEventLineTemplatePath
 		if (eventLineTemplatePath) {
@@ -98,8 +99,7 @@ export default class ICal extends Plugin {
 	async onload() {
 		console.log('loading ical plugin');
 		await this.loadSettings();
-		await this.getEventLineTemplate()
-		await this.getEventNoteTemplate()
+
 
 		this.addSettingTab(new ICalSettingsTab(this.app, this))
 		this.addCommand({
@@ -112,7 +112,8 @@ export default class ICal extends Plugin {
 				},
 			],
 			callback: async () => {
-
+				await this.getEventLineTemplate()
+				await this.getEventNoteTemplate()
 				const activeView = this.app.workspace.getActiveViewOfType(MarkdownView)
 				if (activeView) {
 					const _fileDate = moment(activeView.file.basename, this.settings.dailyNoteDateFormat)

@@ -1,0 +1,10 @@
+{
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "driver": "SQLite",
+            "database": "/Users/mdelobel/Library/Calendars/Calendar.sqlitedb",
+            "name": "calendar"
+        }
+    ]
+}
