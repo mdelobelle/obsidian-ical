@@ -82,6 +82,18 @@ export default class SelectEventsModal extends Modal {
         if (this.selectedEventsForNote.includes(event)) {
             noteToggler.setValue(true)
         }
+        const templateSelectorContainer = eventSelectorContainer.createDiv({
+            cls: "ical-template-selector-toggler"
+        })
+        const templateSelector = new DropdownComponent(templateSelectorContainer)
+        this.plugin.settings.iCalEventNoteTemplates.forEach(t => {
+            templateSelector.addOption(t.name, t.name)
+        })
+        if (this.plugin.settings.defaultTemplate) templateSelector.setValue(this.plugin.settings.defaultTemplate)
+        templateSelector.onChange((value) => {
+            event.templateName = value
+            event.build()
+        })
         const eventAttendeesChanger = eventSelectorContainer.createDiv({
             cls: "ical-event-attendees-changer"
         })
@@ -89,11 +101,6 @@ export default class SelectEventsModal extends Modal {
         const eventLabelContainer = eventSelectorContainer.createDiv({
             cls: "ical-event-selector-label"
         })
-        const eventLabelCalendarName = eventLabelContainer.createDiv({
-            cls: "eventLabelCalendarName"
-        })
-        eventLabelCalendarName.setAttr("style", `background-color: var(--chart-color-1})`)
-        eventLabelCalendarName.setText("Calendrier")
         const eventLabel = eventLabelContainer.createDiv({
             cls: "eventLabelSummary"
         })

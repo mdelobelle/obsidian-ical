@@ -8,31 +8,30 @@ import moment from 'moment'
 export default class ICal extends Plugin {
 	settings: ICalSettings;
 	db: any;
-	eventLineTemplate: string = ""
-	eventNoteTemplate: string = ""
+	eventLineTemplates: { name: string, template: string }[] = []
+	eventNoteTemplates: { name: string, template: string }[] = []
 
 
 	async getEventLineTemplate(): Promise<void> {
-		const eventLineTemplatePath = this.settings.iCalEventLineTemplatePath
-		if (eventLineTemplatePath) {
+		await Promise.all(this.settings.iCalEventNoteTemplates.map(async t => {
 			try {
-				const templateFile = this.app.vault.getAbstractFileByPath(eventLineTemplatePath)
+				const templateFile = this.app.vault.getAbstractFileByPath(t.lineTemplatePath)
 				if (templateFile instanceof TFile) {
-					this.eventLineTemplate = await this.app.vault.read(templateFile)
+					this.eventLineTemplates.push({ name: t.name, template: await this.app.vault.read(templateFile) })
 				}
 			} catch (error) { }
-		}
+		}))
 	}
+
 	async getEventNoteTemplate(): Promise<void> {
-		const eventNoteTemplatePath = this.settings.iCalEventNoteTemplatePath
-		if (eventNoteTemplatePath) {
+		await Promise.all(this.settings.iCalEventNoteTemplates.map(async t => {
 			try {
-				const templateFile = this.app.vault.getAbstractFileByPath(eventNoteTemplatePath)
+				const templateFile = this.app.vault.getAbstractFileByPath(t.noteTemplatePath)
 				if (templateFile instanceof TFile) {
-					this.eventNoteTemplate = await this.app.vault.read(templateFile)
+					this.eventNoteTemplates.push({ name: t.name, template: await this.app.vault.read(templateFile) })
 				}
 			} catch (error) { }
-		}
+		}))
 	}
 
 	async getParticipantsForItem(calendarItemId: number) {
@@ -81,7 +80,7 @@ export default class ICal extends Plugin {
 			const participants: any[] = await this.getParticipantsForItem(item.eventId);
 			const organizer = participants.find((p: any) => p.role === 0)?.name
 			const attendees = participants.filter((p: any) => p.role !== 0).map((p: any) => p.name)
-			return new Event(
+			const event = new Event(
 				this,
 				date,
 				item.eventId,
@@ -92,6 +91,9 @@ export default class ICal extends Plugin {
 				organizer,
 				attendees
 			)
+			event.templateName = this.settings.iCalEventNoteTemplates.find(t => t.name === this.settings.defaultTemplate).name || ""
+			event.build()
+			return event
 		}));
 		return events;
 	}

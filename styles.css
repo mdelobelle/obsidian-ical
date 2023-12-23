@@ -20,6 +20,15 @@
     margin-left: 37px;
 }
 
+
+.ical-events-header-attendees{
+    margin-left: 37px;
+}
+
+.ical-events-header-template{
+    margin-left: 37px;
+}
+
 .ical-event-selector-container{
     margin-bottom: 5px;
     display: flex;
@@ -34,6 +43,9 @@
     margin-right: 10px;
 }
 
+.ical-template-selector-toggler{
+    margin: 0 0.5em;
+}
 .ical-event-selector-label{
     margin-left: 10px;
     margin-top: -8px;
@@ -177,4 +189,12 @@
 
 .inlineFormButtonsContainer .is-disabled {
     color: var(--text-faint)
+}
+
+.iCal .modal input{
+    width: 100%;
+}
+
+.iCal .modal .saveBtn{
+    margin-top: 1em;
 }

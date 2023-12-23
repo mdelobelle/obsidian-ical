@@ -1,3 +1,4 @@
+import { DEFAULT_TEMPLATE, EventTemplate } from 'src/settings/ICalSettings';
 import ICal from '../../main'
 import { moment } from 'obsidian'
 
@@ -16,6 +17,11 @@ interface IEvent {
     organizerWithAlias: Participant
 }
 
+const availableVariables = [
+    "start",
+    "end"
+]
+
 export class Event implements IEvent {
 
     public attendeesWithAlias: Participant[] = [];
@@ -27,6 +33,7 @@ export class Event implements IEvent {
     public timeFormat: string
     public eventNote: string
     public eventLine: string
+    public templateName: string = "DEFAULT"
 
     constructor(
         public plugin: ICal,
@@ -48,55 +55,106 @@ export class Event implements IEvent {
         this.organizerWithAlias = { name: organizer, alias: organizerAlias?.alias || organizer }
         this.dateFormat = this.plugin.settings.dateFormat
         this.timeFormat = this.plugin.settings.timeFormat
-        this.start = moment((unixStart + 3600) * 1000).add(11323, 'd') // origin of time seems to be 1/1/1992 in calendar
-        this.end = moment((unixEnd + 3600) * 1000).add(11323, 'd')
+        this.start = moment((unixStart) * 1000).add(11323, 'd') // origin of time seems to be 1/1/1992 in calendar
+        this.end = moment((unixEnd) * 1000).add(11323, 'd')
+    }
+
+    public build() {
         this.renderShortEvent(35)
         this.renderEventLine()
         this.renderEventNote()
     }
 
+    public getTemplate(): EventTemplate {
+        return this.plugin.settings.iCalEventNoteTemplates.find(t => t.name === this.templateName) || DEFAULT_TEMPLATE
+    }
+
+    private buildFolderPath() {
+        let folderTemplate = this.getTemplate().destFolder
+        const templateValues: Record<string, string> = {}
+        const templateFieldRegex = new RegExp(`\\{\\{(?<field>[^\\}]+?)\\}\\}`, "gu");
+        const tF = folderTemplate.matchAll(templateFieldRegex)
+        let next = tF.next();
+        while (!next.done) {
+            if (next.value.groups) {
+                const value = next.value.groups.field
+                const [eventItem, itemFormat] = value.split(/:(.*)/s).map((v: string) => v.trim())
+                templateValues[value] = "";
+                if (itemFormat && availableVariables.includes(eventItem)) {
+                    if (eventItem === "start") templateValues[value] = moment(this.start).format(itemFormat);
+                    if (eventItem === "end") templateValues[value] = moment(this.end).format(itemFormat);
+                } else {
+                    templateValues[value] = "";
+                }
+            }
+            next = tF.next()
+        }
+        Object.keys(templateValues).forEach(k => {
+            const fieldRegex = new RegExp(`\\{\\{${k}\\}\\}`, "gu")
+            folderTemplate = folderTemplate.replace(fieldRegex, templateValues[k])
+        })
+        folderTemplate = folderTemplate.replace(/\/$/, "")
+        return folderTemplate
+    }
+
+    private resolveTemplates(_template: string) {
+        let template = _template
+        const templateValues: Record<string, string> = {}
+        const templateFieldRegex = new RegExp(`\\{\\{(?<field>[^\\}]+?)\\}\\}`, "gu");
+        const tF = template.matchAll(templateFieldRegex)
+        let next = tF.next();
+        while (!next.done) {
+            if (next.value.groups) {
+                const value = next.value.groups.field
+                const [eventItem, itemFormat] = value.split(/:(.*)/s).map((v: string) => v.trim())
+                templateValues[value] = "";
+                if (itemFormat && availableVariables.includes(eventItem)) {
+                    if (eventItem === "start") templateValues[value] = moment(this.start).format(itemFormat);
+                    if (eventItem === "end") templateValues[value] = moment(this.end).format(itemFormat);
+                } else {
+                    switch (value) {
+                        case "startday": templateValues[value] = this.start.format(this.plugin.settings.dateFormat); break;
+                        case "starttime": templateValues[value] = this.start.format(this.plugin.settings.timeFormat); break;
+                        case "endday": templateValues[value] = this.end.format(this.plugin.settings.dateFormat); break;
+                        case "endtime": templateValues[value] = this.end.format(this.plugin.settings.timeFormat); break;
+                        case "start": templateValues[value] = this.eventStart(); break;
+                        case "end": templateValues[value] = this.eventEnd(); break;
+                        case "summary": templateValues[value] = `${this.summary.replace(/[:/|]/g, "-").trim()}`; break;
+                        case "organizer": templateValues[value] = `${this.organizerWithAlias.alias || ""}`; break;
+                        case "organizer.link": templateValues[value] = `${this.organizerWithAlias.alias ? `[[${this.organizerWithAlias.alias}]]` : ""}`; break;
+                        case "attendees.inline": templateValues[value] = this.attendeesWithAlias.map(a => a.alias).join(", "); break;
+                        case "attendees.list": templateValues[value] = this.attendeesWithAlias.map(a => `- ${a.alias}`).join('\n'); break;
+                        case "attendees.link.inline": templateValues[value] = this.attendeesWithAlias.map(a => `[[${a.alias}]]`).join(", "); break;
+                        case "attendees.link.list": templateValues[value] = this.attendeesWithAlias.map(a => `- [[${a.alias}]]`).join('\n'); break;
+                    }
+                }
+            }
+            next = tF.next()
+        }
+        Object.keys(templateValues).forEach(k => {
+            const fieldRegex = new RegExp(`\\{\\{${k}\\}\\}`, "gu")
+            template = template.replace(fieldRegex, templateValues[k])
+        })
+        return template
+    }
 
     createNote = async () => {
-        const folder = this.plugin.settings.iCalEventNotesFolder
-        let template = this.plugin.settings.iCalEventNotesFileNameTemplate
+        let template = this.getTemplate().fileTitleTemplate
         if (template) {
-            template = template.replace(/{{startday}}/g, this.start.format(this.plugin.settings.dateFormat))
-            template = template.replace(/{{starttime}}/g, this.start.format(this.plugin.settings.timeFormat))
-            template = template.replace(/{{endday}}/g, this.end.format(this.plugin.settings.dateFormat))
-            template = template.replace(/{{endtime}}/g, this.end.format(this.plugin.settings.timeFormat))
-            template = template.replace(/{{start}}/g, this.eventStart())
-            template = template.replace(/{{end}}/g, this.eventEnd())
-            template = template.replace(/{{summary}}/g, `${this.summary.replace(/[:/|]/g, "-").trim()}`)
-            template = template.replace(/{{organizer}}/g, `${this.organizerWithAlias.alias || ""}`)
+            template = this.resolveTemplates(template)
         } else {
             template = String(`${this.start.format(this.dateFormat)} - ${this.start.format(this.timeFormat)} - ${this.summary.replace(/[:/]/g, "-").trim()}`)
         }
         const filename = template.replace(/[:/]/g, "-").trim()
-        await this.plugin.app.vault.create(folder + filename + ".md", this.eventNote)
-    }
-
-    renderTemplate(_template: string) {
-        let template = _template
-        template = template.replace(/{{startday}}/g, this.start.format(this.plugin.settings.dateFormat))
-        template = template.replace(/{{starttime}}/g, this.start.format(this.plugin.settings.timeFormat))
-        template = template.replace(/{{endday}}/g, this.end.format(this.plugin.settings.dateFormat))
-        template = template.replace(/{{endtime}}/g, this.end.format(this.plugin.settings.timeFormat))
-        template = template.replace(/{{start}}/g, this.eventStart())
-        template = template.replace(/{{end}}/g, this.eventEnd())
-        template = template.replace(/{{summary}}/g, `${this.summary.replace(/[:/|]/g, "-").trim()}`)
-        template = template.replace(/{{organizer}}/g, `${this.organizerWithAlias.alias || ""}`)
-        template = template.replace(/{{organizer.link}}/g, `${this.organizerWithAlias.alias ? `[[${this.organizerWithAlias.alias}]]` : ""}`)
-        template = template.replace(/{{attendees.inline}}/g, this.attendeesWithAlias.map(a => a.alias).join(", "))
-        template = template.replace(/{{attendees.list}}/g, this.attendeesWithAlias.map(a => `- ${a.alias}`).join('\n'))
-        template = template.replace(/{{attendees.link.inline}}/g, this.attendeesWithAlias.map(a => `[[${a.alias}]]`).join(", "))
-        template = template.replace(/{{attendees.link.list}}/g, this.attendeesWithAlias.map(a => `- [[${a.alias}]]`).join('\n'))
-        return template
+        const folderTemplate = this.buildFolderPath()
+        if (!this.plugin.app.vault.getAbstractFileByPath(folderTemplate)) await this.plugin.app.vault.createFolder(folderTemplate)
+        await this.plugin.app.vault.create(`${folderTemplate}/${filename}.md`, this.eventNote)
     }
 
     renderEventNote() {
-        const template = this.plugin.eventNoteTemplate
+        const template = this.plugin.eventNoteTemplates.find(t => t.name === this.getTemplate().name)?.template
         if (template) {
-            this.eventNote = this.renderTemplate(template)
+            this.eventNote = this.resolveTemplates(template)
         } else {
             this.eventNote = String(`### ${this.eventStart()} - ${this.eventEnd()} : ${this.summary}`)
         }
@@ -107,9 +165,9 @@ export class Event implements IEvent {
     }
 
     renderEventLine(): void {
-        const template = this.plugin.eventLineTemplate
+        const template = this.plugin.eventLineTemplates.find(t => t.name === this.getTemplate().name)?.template
         if (template) {
-            this.eventLine = this.renderTemplate(template)
+            this.eventLine = this.resolveTemplates(template)
         } else {
             this.eventLine = String(`### ${this.eventStart()} - ${this.eventEnd()} : ${this.summary}`)
         }

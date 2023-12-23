@@ -495,9 +495,9 @@
   dependencies:
     "iconv-lite" "^0.6.2"
 
-"esbuild-darwin-64@0.13.12":
-  "integrity" "sha512-c51C+N+UHySoV2lgfWSwwmlnLnL0JWj/LzuZt9Ltk9ub1s2Y8cr6SQV5W3mqVH1egUceew6KZ8GyI4nwu+fhsw=="
-  "resolved" "https://registry.npmjs.org/esbuild-darwin-64/-/esbuild-darwin-64-0.13.12.tgz"
+"esbuild-darwin-arm64@0.13.12":
+  "integrity" "sha512-JvAMtshP45Hd8A8wOzjkY1xAnTKTYuP/QUaKp5eUQGX+76GIie3fCdUUr2ZEKdvpSImNqxiZSIMziEiGB5oUmQ=="
+  "resolved" "https://registry.npmjs.org/esbuild-darwin-arm64/-/esbuild-darwin-arm64-0.13.12.tgz"
   "version" "0.13.12"
 
 "esbuild@0.13.12":
