@@ -6,5 +6,9 @@
             "database": "/Users/mdelobel/Library/Calendars/Calendar.sqlitedb",
             "name": "calendar"
         }
-    ]
+    ],
+    "workbench.colorCustomizations": {
+        "activityBar.background": "#af621f",
+        "activityBar.inactiveForeground": "#282424"
+    },
 }

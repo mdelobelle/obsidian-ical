@@ -25,6 +25,7 @@ const availableVariables = [
 export class Event implements IEvent {
 
     public attendeesWithAlias: Participant[] = [];
+    public attendeesWithoutOrganizerWithAlias: Participant[] = [];
     public organizerWithAlias: Participant
     public shortEvent: string
     public start: moment.Moment
@@ -53,10 +54,12 @@ export class Event implements IEvent {
         })
         const organizerAlias = attendeesAliases.find(a => a.name === organizer)
         this.organizerWithAlias = { name: organizer, alias: organizerAlias?.alias || organizer }
+        this.attendeesWithoutOrganizerWithAlias = this.attendeesWithAlias.filter(att => att.name !== this.organizerWithAlias.name)
         this.dateFormat = this.plugin.settings.dateFormat
         this.timeFormat = this.plugin.settings.timeFormat
-        this.start = moment((unixStart) * 1000).add(11323, 'd') // origin of time seems to be 1/1/1992 in calendar
-        this.end = moment((unixEnd) * 1000).add(11323, 'd')
+        this.start = moment((unixStart) * 1000).add(978307200, 's') // Apple EPOCH
+        this.end = moment((unixEnd) * 1000).add(978307200, 's')
+
     }
 
     public build() {
@@ -119,13 +122,20 @@ export class Event implements IEvent {
                         case "endtime": templateValues[value] = this.end.format(this.plugin.settings.timeFormat); break;
                         case "start": templateValues[value] = this.eventStart(); break;
                         case "end": templateValues[value] = this.eventEnd(); break;
-                        case "summary": templateValues[value] = `${this.summary.replace(/[:/|]/g, "-").trim()}`; break;
+                        case "summary": templateValues[value] = `${this.summary?.replace(/[:/|]/g, "-").trim() || ""}`; break;
                         case "organizer": templateValues[value] = `${this.organizerWithAlias.alias || ""}`; break;
                         case "organizer.link": templateValues[value] = `${this.organizerWithAlias.alias ? `[[${this.organizerWithAlias.alias}]]` : ""}`; break;
+                        case "organizer.link.frontmatter": templateValues[value] = `${this.organizerWithAlias.alias ? `"[[${this.organizerWithAlias.alias}]]"` : ""}`; break;
                         case "attendees.inline": templateValues[value] = this.attendeesWithAlias.map(a => a.alias).join(", "); break;
                         case "attendees.list": templateValues[value] = this.attendeesWithAlias.map(a => `- ${a.alias}`).join('\n'); break;
+                        case "attendees.link.frontmatter": templateValues[value] = `[${this.attendeesWithAlias.map(a => `"[[${a.alias}]]"`).join(", ")}]`; break;
                         case "attendees.link.inline": templateValues[value] = this.attendeesWithAlias.map(a => `[[${a.alias}]]`).join(", "); break;
                         case "attendees.link.list": templateValues[value] = this.attendeesWithAlias.map(a => `- [[${a.alias}]]`).join('\n'); break;
+                        case "attendeesWithoutOrganizer.inline": templateValues[value] = this.attendeesWithoutOrganizerWithAlias.map(a => a.alias).join(", "); break;
+                        case "attendeesWithoutOrganizer.list": templateValues[value] = this.attendeesWithoutOrganizerWithAlias.map(a => `- ${a.alias}`).join('\n'); break;
+                        case "attendeesWithoutOrganizer.link.frontmatter": templateValues[value] = `[${this.attendeesWithoutOrganizerWithAlias.map(a => `"[[${a.alias}]]"`).join(", ")}]`; break;
+                        case "attendeesWithoutOrganizer.link.inline": templateValues[value] = this.attendeesWithoutOrganizerWithAlias.map(a => `[[${a.alias}]]`).join(", "); break;
+                        case "attendeesWithoutOrganizer.link.list": templateValues[value] = this.attendeesWithoutOrganizerWithAlias.map(a => `- [[${a.alias}]]`).join('\n'); break;
                     }
                 }
             }

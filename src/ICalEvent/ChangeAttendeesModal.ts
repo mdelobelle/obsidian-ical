@@ -1,7 +1,7 @@
 import { Modal, TextComponent, ExtraButtonComponent } from "obsidian"
 import ICal from "../../main"
 import { Event } from "./Event"
-import PersonSuggestModal from "./personSuggestModal"
+import PersonSuggestModal from "./PersonSuggestModal"
 
 export default class ChangeAttendeesModal extends Modal {
 
