@@ -34,28 +34,7 @@ export default class ICal extends Plugin {
 		}))
 	}
 
-	async getParticipantsForItem(calendarItemId: number) {
-		const params: RequestUrlParam = {
-			url: `${this.settings.apiUrl}/attendees`,
-			method: "GET",
-			//contentType: "application/json",
-			body: JSON.stringify({
-				databasePath: this.settings.calendarDbPath,
-				calendarItemId: calendarItemId
-			})
-		}
-		let participants = []
-		try {
-			participants = (await requestUrl(params)).json
-		} catch (error) {
-			console.log(error)
-			new Notice("Error in connecting to the Calendar.sqlitedb", 5000)
-		}
-		return participants;
-	}
-
-
-	async getEventsWithDate(date: string): Promise<any[]> {
+	async getEventsWithDate(date: string): Promise<Event[]> {
 		const unixDate = moment(date).unix()
 		// call the GET request
 		const params: RequestUrlParam = {
@@ -67,19 +46,16 @@ export default class ICal extends Plugin {
 				unixDate: unixDate
 			})
 		}
-		let calendarItems = []
+		let calendarItems: any[] = []
 		try {
 			calendarItems = (await requestUrl(params)).json
 
 		} catch (error) {
 			console.log(error)
-			new Notice("Error in connecting to the Calendar.sqlitedb", 5000)
+			new Notice(`iCal - can't reach the calendar helper on ${this.settings.apiUrl}, is it running?`, 5000)
+			return []
 		}
-
-		const events = Promise.all(calendarItems.map(async (item: any) => {
-			const participants: any[] = await this.getParticipantsForItem(item.eventId);
-			const organizer = participants.find((p: any) => p.role === 0)?.name
-			const attendees = participants.filter((p: any) => p.role !== 0).map((p: any) => p.name)
+		return calendarItems.map((item: any) => {
 			const event = new Event(
 				this,
 				date,
@@ -88,14 +64,13 @@ export default class ICal extends Plugin {
 				item.summary,
 				item.unixStart,
 				item.unixEnd,
-				organizer,
-				attendees
+				item.organizer,
+				item.attendees || []
 			)
-			event.templateName = this.settings.iCalEventNoteTemplates.find(t => t.name === this.settings.defaultTemplate).name || ""
+			event.templateName = this.settings.iCalEventNoteTemplates.find(t => t.name === this.settings.defaultTemplate)?.name || ""
 			event.build()
 			return event
-		}));
-		return events;
+		});
 	}
 
 	async onload() {
@@ -121,7 +96,6 @@ export default class ICal extends Plugin {
 					const _fileDate = moment(activeView.file.basename, this.settings.dailyNoteDateFormat)
 					if (_fileDate.isValid()) {
 						const fileDate = _fileDate.format("YYYY-MM-DD")
-						const fs = require('fs');
 						const events = await this.getEventsWithDate(fileDate)
 						new SelectEventsModal(this, activeView.file, events, fileDate).open()
 					} else {
